@@ -4,6 +4,9 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { fontBody, fontDisplay } from "./fonts";
 import "./globals.css";
 
+// Every page shows per-user state (header session) and live data, so nothing is prerendered at build time.
+export const dynamic = "force-dynamic";
+
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("app");
   return { title: t("name"), description: t("tagline") };
