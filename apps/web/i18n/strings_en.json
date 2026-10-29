@@ -12,7 +12,8 @@
     "tournaments": "Tournaments",
     "menu": "Main menu",
     "admin": "Admin",
-    "myTeam": "My team"
+    "myTeam": "My team",
+    "leaderboard": "Leaderboard"
   },
   "home": {
     "kicker": "Free to play",
@@ -108,7 +109,8 @@
       "overview": "Overview",
       "teams": "Teams",
       "players": "Player points",
-      "matches": "Matches"
+      "matches": "Matches",
+      "leaderboard": "Leaderboard"
     },
     "teamsTitle": "Teams",
     "vrs": "VRS #{rank}",
@@ -132,7 +134,19 @@
     "points": "{points} pts",
     "total": "Total",
     "stageProgress": "{played} of {total} played",
-    "matchDetails": "Match details"
+    "matchDetails": "Match details",
+    "filterStatus": "Status",
+    "filterAll": "All",
+    "filterLive": "Live",
+    "filterUpcoming": "Upcoming",
+    "filterFinished": "Finished",
+    "filterTier": "Tier",
+    "filterAllTiers": "All tiers",
+    "filterOtherTier": "No tier",
+    "filterFantasyOpen": "Fantasy open",
+    "finishedTitle": "Finished",
+    "noResults": "No tournaments match these filters.",
+    "showAllPlayers": "Show all {count} players"
   },
   "roles": {
     "none": "No role",
@@ -376,13 +390,15 @@
       "cleared": "Tournament data cleared.",
       "fakeOnReal": "Kept {teams} real teams and {players} players, created a fake schedule of {matches} matches.",
       "teamAdded": "Added {team} with {players} players. Build the pool to price them.",
-      "ranks": "Updated the VRS rank of {updated} teams."
+      "ranks": "Updated the VRS rank of {updated} teams.",
+      "fakeUsers": "{teams} fake fantasy teams added ({users} fake users)."
     },
     "clearData": "Clear tournament data",
     "clearConfirm": "Click again: deletes teams, matches, pool and fantasy teams of this tournament",
     "addTeam": "Add real team from Cito (1 call)",
     "addTeamSlug": "Cito team slug, for example vitality",
-    "syncRanks": "Update VRS ranks from Cito (1 call)"
+    "syncRanks": "Update VRS ranks from Cito (1 call)",
+    "addFakeUsers": "Add 40 fake fantasy players"
   },
   "team": {
     "vrs": "VRS rank",
@@ -417,5 +433,19 @@
     "pickedBy": "Your player",
     "rounds": "{count} rounds",
     "series": "Series"
+  },
+  "leaderboard": {
+    "title": "Leaderboard",
+    "intro": "Fantasy players ranked by points across all tournaments.",
+    "rank": "#",
+    "player": "Fantasy player",
+    "team": "Team",
+    "points": "Points",
+    "tournaments": "Tournaments",
+    "you": "You",
+    "empty": "No fantasy teams yet.",
+    "byTournament": "By tournament",
+    "showAll": "Show all {count}",
+    "tournamentTitle": "Leaderboard"
   }
 }

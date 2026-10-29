@@ -17,6 +17,9 @@ export async function SiteHeader() {
             <Link href="/tournaments" className={buttonClass("ghost", "sm", "hidden sm:inline-flex")}>
               {t("nav.tournaments")}
             </Link>
+            <Link href="/leaderboard" className={buttonClass("ghost", "sm", "hidden sm:inline-flex")}>
+              {t("nav.leaderboard")}
+            </Link>
             {(session?.user as { role?: string } | undefined)?.role === "admin" ? (
               <Link href="/admin" className={buttonClass("ghost", "sm", "hidden sm:inline-flex")}>
                 {t("nav.admin")}

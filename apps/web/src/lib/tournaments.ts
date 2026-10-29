@@ -46,3 +46,29 @@ export async function getTournamentBySlug(slug: string) {
   const [row] = await db.select().from(schema.tournaments).where(eq(schema.tournaments.slug, slug)).limit(1);
   return row ?? null;
 }
+
+export type TournamentFilter = { status: "all" | "live" | "upcoming" | "finished"; tier: string | null; fantasyOpen: boolean };
+
+const FINISHED_SHOWN = 30;
+
+/** Tournaments for the list page: live, upcoming and recently finished, with optional filters. */
+export async function listTournaments(filter: TournamentFilter, now = new Date()) {
+  const db = await getDb();
+  const rows = await db.select().from(schema.tournaments).where(ne(schema.tournaments.status, "cancelled")).orderBy(asc(schema.tournaments.startsAt));
+  const matches = rows.filter(
+    (t) =>
+      (!filter.tier || (filter.tier === "other" ? !t.tier || !["S", "A", "B", "C"].includes(t.tier) : t.tier === filter.tier)) &&
+      (!filter.fantasyOpen || t.fantasyStatus === "open"),
+  );
+  const live = matches.filter((t) => liveStatus(t, now) === "live");
+  const upcoming = matches.filter((t) => liveStatus(t, now) === "upcoming");
+  const finished = matches
+    .filter((t) => liveStatus(t, now) === "finished")
+    .reverse()
+    .slice(0, FINISHED_SHOWN);
+  return {
+    live: filter.status === "all" || filter.status === "live" ? live : [],
+    upcoming: filter.status === "all" || filter.status === "upcoming" ? upcoming : [],
+    finished: filter.status === "all" || filter.status === "finished" ? finished : [],
+  };
+}

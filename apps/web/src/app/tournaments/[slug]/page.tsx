@@ -13,6 +13,8 @@ import { getDb } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { loadTournamentView } from "@/lib/tournament-view";
 import { getTournamentBySlug, liveStatus } from "@/lib/tournaments";
+import { LeaderboardTable } from "@/components/leaderboard-table";
+import { tournamentLeaderboard } from "@/lib/leaderboard";
 
 const PANEL_TEXT = {
   none: "fantasyPanelNone",
@@ -43,6 +45,7 @@ export default async function TournamentPage({ params }: PageProps<"/tournaments
     formatPrize(tournament),
     loadTournamentView(db, tournament, session?.user.id ?? null, now),
   ]);
+  const leaderboard = tournament.fantasyStatus === "none" ? [] : await tournamentLeaderboard(db, tournament.id);
   const status = liveStatus(tournament, now);
   const playable = ["open", "locked", "finished"].includes(tournament.fantasyStatus) && !!session;
   // "open" with every stage already locked plays like "locked".
@@ -59,6 +62,7 @@ export default async function TournamentPage({ params }: PageProps<"/tournaments
   ].filter((f) => f.value);
   const sections = [
     { id: "overview", label: t("sections.overview") },
+    ...(leaderboard.length ? [{ id: "leaderboard", label: t("sections.leaderboard") }] : []),
     ...(view.teams.length ? [{ id: "teams", label: t("sections.teams") }] : []),
     ...(view.players.length ? [{ id: "players", label: t("sections.players") }] : []),
     { id: "matches", label: t("sections.matches") },
@@ -153,6 +157,15 @@ export default async function TournamentPage({ params }: PageProps<"/tournaments
           ) : null}
         </aside>
       </div>
+
+      {leaderboard.length ? (
+        <section id="leaderboard" className="mt-14 scroll-mt-20" aria-labelledby="leaderboard-title">
+          <h2 id="leaderboard-title" className="mb-4 font-display text-2xl font-bold">
+            {t("sections.leaderboard")}
+          </h2>
+          <LeaderboardTable rows={leaderboard} me={session?.user.id ?? null} showTeam />
+        </section>
+      ) : null}
 
       {view.teams.length ? (
         <section id="teams" className="mt-14 scroll-mt-20" aria-labelledby="teams-title">

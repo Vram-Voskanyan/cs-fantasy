@@ -3,7 +3,7 @@ import { asc, eq } from "drizzle-orm";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { buildPool, clearData, fillFake, loadCitoMatches, loadCitoStats, loadCitoTeams, rescore, simulateMatches, syncRanks } from "@/app/admin/actions";
+import { addFakeUsers, buildPool, clearData, fillFake, loadCitoMatches, loadCitoStats, loadCitoTeams, rescore, simulateMatches, syncRanks } from "@/app/admin/actions";
 import { AddTeamForm } from "@/components/admin/add-team-form";
 import { ActionButton } from "@/components/admin/action-button";
 import { PoolEditor } from "@/components/admin/pool-editor";
@@ -74,6 +74,7 @@ export default async function AdminTournamentPage({ params }: PageProps<"/admin/
           <ActionButton action={fillFake.bind(null, id)} label={t("fillFake")} />
           <ActionButton action={simulateMatches.bind(null, id, 1)} label={t("simulateNext")} />
           <ActionButton action={simulateMatches.bind(null, id, 5)} label={t("simulateFive")} />
+          <ActionButton action={addFakeUsers.bind(null, id)} label={t("addFakeUsers")} />
           <ActionButton action={rescore.bind(null, id)} label={t("rescore")} />
           <ActionButton action={clearData.bind(null, id)} label={t("clearData")} confirmLabel={t("clearConfirm")} variant="danger" />
         </div>

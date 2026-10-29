@@ -3,13 +3,14 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { eq } from "drizzle-orm";
 import { buildPool, setFantasyStatus } from "@/jobs/admin-ops";
 import { fillFakeTournament, simulateNextMatch } from "@/jobs/fake-data";
+import { addFakeFantasyTeams } from "@/jobs/fake-users";
 import { addTeamToTournament, syncVrsRankings } from "@/jobs/sync-tournament";
 
 export const dynamic = "force-dynamic";
 
 // Test setup without an admin account: POST {"slug": "...", "simulate": 0, "reprice": false, "addTeams": ["vitality"], "fill": true}
 // with "Authorization: Bearer <SYNC_TOKEN>". addTeams loads real Cito teams first (1 call each).
-// "fill": false only simulates more matches on the existing fake schedule.
+// "fill": false only simulates more matches on the existing fake schedule. "fakeUsers": 40 adds fake fantasy players.
 // Opens the fantasy game, fills fake teams and matches (Cito shape), builds the pool, optionally plays N matches.
 export async function POST(request: Request) {
   const { env } = await getCloudflareContext({ async: true });
@@ -21,6 +22,7 @@ export async function POST(request: Request) {
     reprice?: boolean;
     addTeams?: string[];
     fill?: boolean;
+    fakeUsers?: number;
   };
   if (!body.slug) return Response.json({ ok: false, error: "slug required" }, { status: 400 });
 
@@ -43,5 +45,6 @@ export async function POST(request: Request) {
     if (!(await simulateNextMatch(db, tournament))) break;
     simulated++;
   }
-  return Response.json({ ok: true, added, ...fake, pool: pool.count, simulated });
+  const users = body.fakeUsers ? await addFakeFantasyTeams(db, tournament, Math.min(body.fakeUsers, 200)) : null;
+  return Response.json({ ok: true, added, ...fake, pool: pool.count, simulated, users });
 }

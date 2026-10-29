@@ -7,6 +7,7 @@ import { and, eq, inArray, max } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { buildPool as buildPoolOp, clearTournamentData, setFantasyStatus as setStatus } from "@/jobs/admin-ops";
 import { fillFakeTournament, getTournamentById, simulateNextMatch } from "@/jobs/fake-data";
+import { addFakeFantasyTeams } from "@/jobs/fake-users";
 import { getGameConfig, getStages } from "@/jobs/game";
 import { recomputeTournamentScores, rescoreTournament } from "@/jobs/score";
 import { addTeamToTournament, syncTournamentMatches, syncTournamentStats, syncTournamentTeams, syncVrsRankings } from "@/jobs/sync-tournament";
@@ -16,6 +17,7 @@ import { getDb } from "@/lib/db";
 export type ActionResult = { ok: boolean; key: string; values?: Record<string, string | number> };
 
 const STATS_CALLS_PER_RUN = 5;
+const FAKE_USERS = 40;
 
 async function run(fn: () => Promise<ActionResult>, path: string): Promise<ActionResult> {
   await requireAdmin();
@@ -127,6 +129,15 @@ export async function simulateMatches(tournamentId: string, count: number): Prom
       done++;
     }
     return done === 0 ? { ok: false, key: "noMatchLeft" } : { ok: true, key: "simulated", values: { count: done } };
+  }, `/admin/tournaments/${tournamentId}`);
+}
+
+export async function addFakeUsers(tournamentId: string): Promise<ActionResult> {
+  return run(async () => {
+    const { db, tournament } = await getTournamentById(await env(), tournamentId);
+    if (!tournament) throw new Error("not found");
+    const r = await addFakeFantasyTeams(db, tournament, FAKE_USERS);
+    return { ok: true, key: "fakeUsers", values: r };
   }, `/admin/tournaments/${tournamentId}`);
 }
 

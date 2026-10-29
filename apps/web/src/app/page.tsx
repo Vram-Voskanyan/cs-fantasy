@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
+import { HeroTracers } from "@/components/hero-tracers";
 import { PageShell } from "@/components/page-shell";
 import { TournamentGrid } from "@/components/tournaments/tournament-grid";
 import { buttonClass } from "@/components/ui/button";
@@ -21,7 +22,9 @@ export default async function HomePage() {
 
   return (
     <PageShell>
-      <section className="max-w-2xl">
+      <section className="relative -mx-4 -mt-10 overflow-hidden px-4 pt-10 pb-6 md:-mx-6 md:-mt-16 md:px-6 md:pt-16">
+        <HeroTracers />
+        <div className="relative max-w-2xl">
         <p className="label text-primary!">{t("kicker")}</p>
         <h1 className="mt-3 font-display text-4xl leading-[1.05] font-extrabold md:text-5xl">{t("title")}</h1>
         <p className="mt-4 text-fg-muted">{tApp("tagline")}</p>
@@ -40,6 +43,7 @@ export default async function HomePage() {
               </Link>
             </>
           )}
+        </div>
         </div>
       </section>
 

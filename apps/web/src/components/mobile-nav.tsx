@@ -1,6 +1,6 @@
 "use client";
 
-import { House, Trophy, UserRound } from "lucide-react";
+import { House, ListOrdered, Trophy, UserRound } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -12,6 +12,7 @@ export function MobileNav({ signedIn }: { signedIn: boolean }) {
   const items = [
     { href: "/", label: t("home"), icon: House, active: pathname === "/" },
     { href: "/tournaments", label: t("tournaments"), icon: Trophy, active: pathname.startsWith("/tournaments") },
+    { href: "/leaderboard", label: t("leaderboard"), icon: ListOrdered, active: pathname.startsWith("/leaderboard") },
     signedIn
       ? { href: "/account", label: t("account"), icon: UserRound, active: pathname.startsWith("/account") }
       : { href: "/sign-in", label: t("signIn"), icon: UserRound, active: pathname === "/sign-in" || pathname === "/sign-up" },
@@ -22,7 +23,7 @@ export function MobileNav({ signedIn }: { signedIn: boolean }) {
       aria-label={t("menu")}
       className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface-1 pb-[env(safe-area-inset-bottom)] sm:hidden"
     >
-      <ul className="grid grid-cols-3">
+      <ul className="grid grid-cols-4">
         {items.map(({ href, label, icon: Icon, active }) => (
           <li key={href}>
             <Link

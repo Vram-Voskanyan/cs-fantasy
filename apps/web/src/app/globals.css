@@ -420,3 +420,59 @@
     border-color: rgb(255 64 64 / 0.6);
   }
 }
+
+/* Home hero: tracer rounds flying from the bottom-left to the top-right. Decorative, black and white. */
+@layer components {
+  .tracers {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
+  }
+  .tracer {
+    position: absolute;
+    bottom: -40px;
+    left: var(--x);
+    width: var(--len);
+    height: 1px;
+    border-radius: 1px;
+    background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.85));
+    opacity: 0;
+    animation: tracer-fly var(--dur) linear var(--delay) infinite;
+  }
+  .tracer::after {
+    content: "";
+    position: absolute;
+    top: -1px;
+    right: -1px;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 0 6px 1px rgb(255 255 255 / 0.6);
+  }
+}
+
+@keyframes tracer-fly {
+  0% {
+    transform: translate(0, 0) rotate(-33deg);
+    opacity: 0;
+  }
+  8% {
+    opacity: var(--o);
+  }
+  85% {
+    opacity: var(--o);
+  }
+  100% {
+    transform: translate(1400px, -910px) rotate(-33deg);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tracer {
+    display: none;
+  }
+}
