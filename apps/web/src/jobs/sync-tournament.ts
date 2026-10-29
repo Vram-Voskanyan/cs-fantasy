@@ -5,7 +5,7 @@ const ROSTER_TTL_MS = 24 * 3_600_000;
 
 import { createDb, type Db, schema } from "@cs-vv-fantasy/db";
 import { and, eq, gt, inArray, isNull } from "drizzle-orm";
-import { type CitoGame, type CitoMatch, type CitoParticipants, type CitoRosterEntry, citoGet } from "./cito";
+import { type CitoGame, type CitoMatch, type CitoParticipants, type CitoRosterEntry, type CitoTeamDetails, type CitoVrsEntry, citoGet } from "./cito";
 import { ingestGames, ingestMatches, ingestParticipants, ingestRoster, ingestTeams, resolveIds } from "./ingest";
 import { scoreMatch } from "./score";
 
@@ -94,6 +94,15 @@ export async function syncTournamentTeams(env: CloudflareEnv, tournamentId: stri
     await db.update(schema.teams).set({ rosterSyncedAt: new Date() }).where(eq(schema.teams.id, teamId));
   }
   await db.update(schema.tournaments).set({ dataSource: "cito" }).where(eq(schema.tournaments.id, tournamentId));
+  // Participants carry no ranking; one call to the VRS list fills it for every known team.
+  const unranked = await db
+    .select({ id: schema.teams.id })
+    .from(schema.teams)
+    .where(and(inArray(schema.teams.id, [...teamIds.values()]), isNull(schema.teams.vrsRanking)));
+  if (unranked.length > 0) {
+    await syncVrsRankings(env);
+    calls++;
+  }
   const players = await db
     .select({ id: schema.teamPlayers.playerId })
     .from(schema.teamPlayers)
@@ -137,4 +146,52 @@ export async function syncTournamentStats(env: CloudflareEnv, tournamentId: stri
     await scoreMatch(db, result.matchId);
   }
   return { matches: pending.length, maps, calls: pending.length };
+}
+
+/** Updates the VRS rank of every team we already have (one call; does not create teams). */
+export async function syncVrsRankings(env: CloudflareEnv) {
+  const db = createDb(env.DB);
+  const body = await citoGet<CitoVrsEntry[]>(env.CITO_API_KEY, "/cs2/rankings/vrs", { limit: "200" });
+  await saveRaw(env, "rankings-vrs", body);
+  const entries = body.data ?? [];
+  // Only teams we already have; resolveIds would create the rest, so look them up directly (chunked: D1 allows 100 variables).
+  const internal = new Map<string, string>();
+  for (let i = 0; i < entries.length; i += 90) {
+    const known = await db
+      .select({ providerId: schema.externalIds.providerId, internalId: schema.externalIds.internalId })
+      .from(schema.externalIds)
+      .where(
+        and(
+          eq(schema.externalIds.provider, "cito"),
+          eq(schema.externalIds.entityType, "team"),
+          inArray(
+            schema.externalIds.providerId,
+            entries.slice(i, i + 90).map((e) => e.teamId),
+          ),
+        ),
+      );
+    for (const k of known) internal.set(k.providerId, k.internalId);
+  }
+  const statements = entries
+    .filter((e) => internal.has(e.teamId))
+    .map((e) => db.update(schema.teams).set({ vrsRanking: e.rank }).where(eq(schema.teams.id, internal.get(e.teamId)!)));
+  for (let i = 0; i < statements.length; i += 50) {
+    const [first, ...rest] = statements.slice(i, i + 50);
+    if (first) await db.batch([first, ...rest]);
+  }
+  return { updated: statements.length };
+}
+
+/** Adds one real Cito team (details and roster in one call) to a tournament. */
+export async function addTeamToTournament(env: CloudflareEnv, tournamentId: string, teamSlugOrId: string) {
+  const db = createDb(env.DB);
+  const body = await citoGet<CitoTeamDetails>(env.CITO_API_KEY, `/cs2/teams/${encodeURIComponent(teamSlugOrId)}`);
+  await saveRaw(env, `team/${teamSlugOrId}`, body);
+  const team = body.data;
+  if (!team?.id) throw new Error(`Team ${teamSlugOrId} not found at Cito`);
+  const ids = await ingestTeams(db, "cito", [team]);
+  const { players } = await ingestRoster(db, "cito", team.id, team.roster ?? []);
+  await db.update(schema.teams).set({ rosterSyncedAt: new Date() }).where(eq(schema.teams.id, ids.get(team.id)!));
+  await ingestParticipants(db, "cito", tournamentId, [{ teamId: team.id, teamName: team.name, seed: null, placement: null, status: "added" }]);
+  return { team: team.name, players };
 }

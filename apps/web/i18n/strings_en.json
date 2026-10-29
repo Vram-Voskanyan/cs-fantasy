@@ -103,7 +103,36 @@
     "tbd": "TBD",
     "final": "Final",
     "vs": "vs",
-    "bestOf": "BO{n}"
+    "bestOf": "BO{n}",
+    "sections": {
+      "overview": "Overview",
+      "teams": "Teams",
+      "players": "Player points",
+      "matches": "Matches"
+    },
+    "teamsTitle": "Teams",
+    "vrs": "VRS #{rank}",
+    "world": "World #{rank}",
+    "noTeams": "Teams are not announced yet.",
+    "playersTitle": "Player points",
+    "playersIntro": "Fantasy points per player in this tournament, without role bonus. Your players are marked.",
+    "colRank": "#",
+    "colPlayer": "Player",
+    "colTeam": "Team",
+    "colRole": "Role",
+    "colRating": "Rating",
+    "colPrice": "Price",
+    "colMaps": "Maps",
+    "colPoints": "Points",
+    "yourPlayer": "Your player",
+    "noPlayers": "No players yet.",
+    "playoffsTitle": "Playoffs",
+    "yourPlayersInMatch": "{count, plural, one {# of your players} other {# of your players}}",
+    "myTeamTitle": "Your team",
+    "points": "{points} pts",
+    "total": "Total",
+    "stageProgress": "{played} of {total} played",
+    "matchDetails": "Match details"
   },
   "roles": {
     "none": "No role",
@@ -345,9 +374,48 @@
       "stages": "Stages saved.",
       "configSaved": "Saved version {version}.",
       "cleared": "Tournament data cleared.",
-      "fakeOnReal": "Kept {teams} real teams and {players} players, created a fake schedule of {matches} matches."
+      "fakeOnReal": "Kept {teams} real teams and {players} players, created a fake schedule of {matches} matches.",
+      "teamAdded": "Added {team} with {players} players. Build the pool to price them.",
+      "ranks": "Updated the VRS rank of {updated} teams."
     },
     "clearData": "Clear tournament data",
-    "clearConfirm": "Click again: deletes teams, matches, pool and fantasy teams of this tournament"
+    "clearConfirm": "Click again: deletes teams, matches, pool and fantasy teams of this tournament",
+    "addTeam": "Add real team from Cito (1 call)",
+    "addTeamSlug": "Cito team slug, for example vitality",
+    "syncRanks": "Update VRS ranks from Cito (1 call)"
+  },
+  "team": {
+    "vrs": "VRS rank",
+    "world": "World rank",
+    "country": "Country",
+    "region": "Region",
+    "roster": "Roster",
+    "tournaments": "Tournaments",
+    "matches": "Matches",
+    "noMatches": "No matches yet.",
+    "noRoster": "Roster not loaded yet.",
+    "player": "Player",
+    "name": "Name",
+    "role": "Role",
+    "rating": "Cito rating",
+    "maps": "Maps"
+  },
+  "match": {
+    "back": "Back to {tournament}",
+    "map": "Map {n}",
+    "mapName": "Map {n} · {name}",
+    "notPlayed": "Not played yet. Stats appear after each map.",
+    "player": "Player",
+    "kda": "K / D / A",
+    "plusMinus": "+/–",
+    "adr": "ADR",
+    "kast": "KAST",
+    "hs": "HS",
+    "openings": "Opening K / D",
+    "rating": "Rating",
+    "points": "Points",
+    "pickedBy": "Your player",
+    "rounds": "{count} rounds",
+    "series": "Series"
   }
 }

@@ -1,15 +1,17 @@
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Check } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getTranslations } from "next-intl/server";
+import { getFormatter, getTranslations } from "next-intl/server";
 import { PageShell } from "@/components/page-shell";
+import { TournamentMatches } from "@/components/tournaments/bracket";
 import { FantasyBadge } from "@/components/tournaments/fantasy-badge";
+import { PlayersTable } from "@/components/tournaments/players-table";
+import { TeamsGrid } from "@/components/tournaments/teams-grid";
 import { formatDates, formatPrize, LiveBadge, TierBadge } from "@/components/tournaments/tournament-meta";
 import { buttonClass } from "@/components/ui/button";
-import { MatchList } from "@/components/matches/match-list";
 import { getDb } from "@/lib/db";
-import { loadGame } from "@/lib/fantasy";
 import { getSession } from "@/lib/session";
+import { loadTournamentView } from "@/lib/tournament-view";
 import { getTournamentBySlug, liveStatus } from "@/lib/tournaments";
 
 const PANEL_TEXT = {
@@ -30,27 +32,37 @@ export default async function TournamentPage({ params }: PageProps<"/tournaments
   if (!tournament) notFound();
 
   const now = new Date();
-  const [t, tNav, session, dates, prize] = await Promise.all([
+  const db = await getDb();
+  const session = await getSession();
+  const [t, tNav, tRoles, format, dates, prize, view] = await Promise.all([
     getTranslations("tournaments"),
     getTranslations("nav"),
-    getSession(),
+    getTranslations("roles"),
+    getFormatter(),
     formatDates(tournament),
     formatPrize(tournament),
+    loadTournamentView(db, tournament, session?.user.id ?? null, now),
   ]);
   const status = liveStatus(tournament, now);
-  const db = await getDb();
-  const game = tournament.fantasyStatus === "none" ? null : await loadGame(db, tournament, session?.user.id ?? null, now);
-  const mine = game?.mine ?? null;
-  const editable = !!game?.editableStage;
   const playable = ["open", "locked", "finished"].includes(tournament.fantasyStatus) && !!session;
   // "open" with every stage already locked plays like "locked".
-  const panelStatus = tournament.fantasyStatus === "open" && !editable ? "locked" : tournament.fantasyStatus;
+  const panelStatus = tournament.fantasyStatus === "open" && !view.editable ? "locked" : tournament.fantasyStatus;
+  const pts = (n: number) => format.number(n, { maximumFractionDigits: 2 });
   const facts = [
     { label: t("dates"), value: dates },
-    { label: t("location"), value: [tournament.location, tournament.isLan === null ? null : tournament.isLan ? t("lan") : t("online")].filter(Boolean).join(" · ") },
+    {
+      label: t("location"),
+      value: [tournament.location, tournament.isLan === null ? null : tournament.isLan ? t("lan") : t("online")].filter(Boolean).join(" · "),
+    },
     { label: t("prizePool"), value: prize ?? t("prizeTbd") },
-    { label: t("teamCount"), value: tournament.teamCount ? String(tournament.teamCount) : null },
+    { label: t("teamCount"), value: view.teams.length ? String(view.teams.length) : tournament.teamCount ? String(tournament.teamCount) : null },
   ].filter((f) => f.value);
+  const sections = [
+    { id: "overview", label: t("sections.overview") },
+    ...(view.teams.length ? [{ id: "teams", label: t("sections.teams") }] : []),
+    ...(view.players.length ? [{ id: "players", label: t("sections.players") }] : []),
+    { id: "matches", label: t("sections.matches") },
+  ];
 
   return (
     <PageShell>
@@ -66,7 +78,19 @@ export default async function TournamentPage({ params }: PageProps<"/tournaments
       </div>
       <h1 className="mt-3 max-w-3xl font-display text-3xl leading-tight font-bold text-balance md:text-5xl">{tournament.name}</h1>
 
-      <div className="mt-10 grid gap-6 lg:grid-cols-[1fr_380px]">
+      <nav aria-label={t("sections.overview")} className="sticky top-0 z-30 -mx-4 mt-6 border-b border-border bg-bg/95 px-4 backdrop-blur md:mx-0 md:px-0">
+        <ul className="flex gap-1 overflow-x-auto">
+          {sections.map((s) => (
+            <li key={s.id}>
+              <a href={`#${s.id}`} className={buttonClass("ghost", "sm", "whitespace-nowrap")}>
+                {s.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+
+      <div id="overview" className="mt-8 grid scroll-mt-20 gap-6 lg:grid-cols-[1fr_380px]">
         <div className="grid content-start gap-6">
           <dl className="card grid gap-5 sm:grid-cols-2">
             {facts.map((fact) => (
@@ -84,33 +108,76 @@ export default async function TournamentPage({ params }: PageProps<"/tournaments
           ) : null}
         </div>
 
-        <aside className="card content-start" aria-labelledby="fantasy-panel">
+        <aside className="card grid content-start gap-4" aria-labelledby="fantasy-panel">
           <h2 id="fantasy-panel" className="font-display text-xl font-bold">
-            {t("fantasyPanelTitle")}
+            {view.myTeam ? view.myTeam.name : t("fantasyPanelTitle")}
           </h2>
-          <p className="mt-3 text-fg-muted">{t(PANEL_TEXT[panelStatus])}</p>
-          {mine ? (
-            <p className="mt-3 font-display text-lg font-bold tabular-nums">
-              {mine.team.name} · {t("yourPoints", { points: mine.total })}
-            </p>
-          ) : null}
+          {view.myTeam ? (
+            <>
+              <ul className="grid gap-1.5 text-sm">
+                {view.myTeam.picks.map((p) => (
+                  <li key={p.playerId} className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-[4px] bg-surface-2 px-3 py-2">
+                    <span className="min-w-0">
+                      <Link href={`/players/${p.slug}`} className="font-display font-semibold hover:underline">
+                        {p.nickname}
+                      </Link>{" "}
+                      <span className="text-xs text-fg-muted">{p.teamTag}</span>
+                      <span className="block text-xs text-accent">{p.role === "none" ? tRoles("none") : tRoles(`${p.role}.name`)}</span>
+                    </span>
+                    <span className="font-display font-bold tabular-nums">{pts(p.points)}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="flex items-baseline justify-between border-t border-border pt-3">
+                <span className="label">{t("total")}</span>
+                <span className="font-display text-2xl font-bold tabular-nums">{pts(view.myTeam.total)}</span>
+              </p>
+            </>
+          ) : (
+            <p className="text-fg-muted">{t(PANEL_TEXT[panelStatus])}</p>
+          )}
           {playable ? (
-            <Link href={`/tournaments/${tournament.slug}/team`} className={buttonClass("primary", "md", "mt-6 w-full")}>
-              {editable ? (mine ? t("editTeam") : t("buildTeam")) : t("viewTeam")}
+            <Link href={`/tournaments/${tournament.slug}/team`} className={buttonClass("primary", "md", "w-full")}>
+              {view.editable ? (view.myTeam ? t("editTeam") : t("buildTeam")) : t("viewTeam")}
             </Link>
           ) : session ? null : (
-            <Link href="/sign-up" className={buttonClass("primary", "md", "mt-6 w-full")}>
+            <Link href="/sign-up" className={buttonClass("primary", "md", "w-full")}>
               {tNav("signUp")}
             </Link>
           )}
+          {view.myTeam ? (
+            <p className="flex items-center gap-1.5 text-xs text-fg-muted">
+              <Check className="size-4 text-primary" aria-hidden="true" />
+              {t("yourPlayer")}
+            </p>
+          ) : null}
         </aside>
       </div>
 
-      <section className="mt-12" aria-labelledby="matches-title">
+      {view.teams.length ? (
+        <section id="teams" className="mt-14 scroll-mt-20" aria-labelledby="teams-title">
+          <h2 id="teams-title" className="mb-4 font-display text-2xl font-bold">
+            {t("teamsTitle")}
+          </h2>
+          <TeamsGrid teams={view.teams} />
+        </section>
+      ) : null}
+
+      {view.players.length ? (
+        <section id="players" className="mt-14 scroll-mt-20" aria-labelledby="players-title">
+          <h2 id="players-title" className="font-display text-2xl font-bold">
+            {t("playersTitle")}
+          </h2>
+          <p className="mt-1 mb-4 text-sm text-fg-muted">{t("playersIntro")}</p>
+          <PlayersTable players={view.players} />
+        </section>
+      ) : null}
+
+      <section id="matches" className="mt-14 scroll-mt-20" aria-labelledby="matches-title">
         <h2 id="matches-title" className="mb-4 font-display text-2xl font-bold">
           {t("matchesTitle")}
         </h2>
-        <MatchList db={db} tournamentId={tournament.id} />
+        <TournamentMatches matches={view.matches} />
       </section>
 
       <p className="mt-12 text-sm text-fg-subtle">{t("dataSource")}</p>

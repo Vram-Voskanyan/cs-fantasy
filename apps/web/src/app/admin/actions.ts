@@ -9,7 +9,7 @@ import { buildPool as buildPoolOp, clearTournamentData, setFantasyStatus as setS
 import { fillFakeTournament, getTournamentById, simulateNextMatch } from "@/jobs/fake-data";
 import { getGameConfig, getStages } from "@/jobs/game";
 import { recomputeTournamentScores, rescoreTournament } from "@/jobs/score";
-import { syncTournamentMatches, syncTournamentStats, syncTournamentTeams } from "@/jobs/sync-tournament";
+import { addTeamToTournament, syncTournamentMatches, syncTournamentStats, syncTournamentTeams, syncVrsRankings } from "@/jobs/sync-tournament";
 import { requireAdmin } from "@/lib/admin";
 import { getDb } from "@/lib/db";
 
@@ -68,6 +68,22 @@ export async function loadCitoTeams(tournamentId: string): Promise<ActionResult>
   return run(async () => {
     const r = await syncTournamentTeams(await env(), tournamentId);
     return { ok: true, key: "teams", values: { teams: r.teams, players: r.players, calls: r.calls } };
+  }, `/admin/tournaments/${tournamentId}`);
+}
+
+export async function addCitoTeam(tournamentId: string, teamSlug: string): Promise<ActionResult> {
+  return run(async () => {
+    const slug = teamSlug.trim().toLowerCase();
+    if (!/^[a-z0-9-]+$/.test(slug)) throw new Error("invalid team slug");
+    const r = await addTeamToTournament(await env(), tournamentId, slug);
+    return { ok: true, key: "teamAdded", values: r };
+  }, `/admin/tournaments/${tournamentId}`);
+}
+
+export async function syncRanks(tournamentId: string): Promise<ActionResult> {
+  return run(async () => {
+    const r = await syncVrsRankings(await env());
+    return { ok: true, key: "ranks", values: r };
   }, `/admin/tournaments/${tournamentId}`);
 }
 

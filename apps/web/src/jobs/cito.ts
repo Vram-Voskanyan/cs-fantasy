@@ -34,6 +34,10 @@ export type CitoTeam = {
   logoUrl: string | null;
 };
 
+export type CitoTeamDetails = CitoTeam & { roster: CitoRosterEntry[] };
+
+export type CitoVrsEntry = { teamId: string; rank: number };
+
 export type CitoParticipant = {
   teamId: string;
   teamName: string;

@@ -146,7 +146,7 @@ export function playerStagePoints(data: ScoringData, stage: FantasyStage, player
 type Pick = { playerId: string; role: string | null; stageId: string };
 
 /** Picks that count for a stage: the stage's own picks, else the latest earlier stage's picks (roster carries over). */
-export function picksForStage(stages: FantasyStage[], picks: Pick[], stage: FantasyStage) {
+export function picksForStage<P extends Pick>(stages: FantasyStage[], picks: P[], stage: FantasyStage): P[] {
   const ordered = stages.filter((s) => s.lockAt <= stage.lockAt).reverse();
   for (const s of ordered) {
     const own = picks.filter((p) => p.stageId === s.id);
@@ -192,4 +192,27 @@ export async function recomputeTournamentScores(db: Db, tournamentId: string) {
     const [first, ...rest] = statements.slice(i, i + 50);
     if (first) await db.batch([first, ...rest]);
   }
+}
+
+export type PlayerTotal = { points: number; maps: number; matches: number };
+
+/** Every player's fantasy points in the tournament without a role (base points, series rule applied). */
+export function playerTotals(data: ScoringData) {
+  const totals = new Map<string, PlayerTotal>();
+  const pointsByMap = new Map<string, typeof data.points>();
+  for (const p of data.points) pointsByMap.set(p.mapId, [...(pointsByMap.get(p.mapId) ?? []), p]);
+  for (const match of data.matches) {
+    const byPlayer = new Map<string, number[]>();
+    for (const map of data.maps.filter((m) => m.matchId === match.id)) {
+      for (const p of pointsByMap.get(map.id) ?? []) byPlayer.set(p.playerId, [...(byPlayer.get(p.playerId) ?? []), p.base]);
+    }
+    for (const [playerId, maps] of byPlayer) {
+      const t = totals.get(playerId) ?? { points: 0, maps: 0, matches: 0 };
+      t.points = Math.round((t.points + seriesPoints(maps, match.bestOf, data.config)) * 100) / 100;
+      t.maps += maps.length;
+      t.matches += 1;
+      totals.set(playerId, t);
+    }
+  }
+  return totals;
 }

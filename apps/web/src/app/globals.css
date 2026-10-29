@@ -344,3 +344,79 @@
     display: none;
   }
 }
+
+/* Playoff bracket: rounds left to right, lines join each pair of matches to the next round. */
+@layer components {
+  .bracket {
+    display: flex;
+    min-width: max-content;
+  }
+  .bracket-round {
+    display: flex;
+    flex-direction: column;
+    width: 248px;
+  }
+  .bracket-round-title {
+    padding: 0 20px 12px;
+    text-align: center;
+  }
+  .bracket-body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+  }
+  .bracket-pair {
+    position: relative;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+  }
+  .bracket-slot {
+    position: relative;
+    display: flex;
+    flex: 1;
+    align-items: center;
+    padding: 8px 20px;
+  }
+  .bracket-slot > * {
+    width: 100%;
+  }
+  .bracket-round:not(:last-child) .bracket-slot::after,
+  .bracket-round:not(:first-child) .bracket-slot::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    width: 20px;
+    border-top: 1px solid var(--border-strong);
+  }
+  .bracket-round:not(:last-child) .bracket-slot::after {
+    right: 0;
+  }
+  .bracket-round:not(:first-child) .bracket-slot::before {
+    left: 0;
+  }
+  .bracket-round:not(:last-child) .bracket-pair:has(> .bracket-slot + .bracket-slot)::after {
+    content: "";
+    position: absolute;
+    top: 25%;
+    right: 0;
+    bottom: 25%;
+    border-right: 1px solid var(--border-strong);
+  }
+  .match-card {
+    position: relative;
+    display: grid;
+    gap: 2px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface-1);
+  }
+  .match-card.is-mine {
+    border-color: rgb(255 107 26 / 0.55);
+    box-shadow: inset 3px 0 0 var(--primary);
+  }
+  .match-card.is-live {
+    border-color: rgb(255 64 64 / 0.6);
+  }
+}

@@ -3,7 +3,8 @@ import { asc, eq } from "drizzle-orm";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { buildPool, clearData, fillFake, loadCitoMatches, loadCitoStats, loadCitoTeams, rescore, simulateMatches } from "@/app/admin/actions";
+import { buildPool, clearData, fillFake, loadCitoMatches, loadCitoStats, loadCitoTeams, rescore, simulateMatches, syncRanks } from "@/app/admin/actions";
+import { AddTeamForm } from "@/components/admin/add-team-form";
 import { ActionButton } from "@/components/admin/action-button";
 import { PoolEditor } from "@/components/admin/pool-editor";
 import { StagesEditor } from "@/components/admin/stages-editor";
@@ -68,6 +69,7 @@ export default async function AdminTournamentPage({ params }: PageProps<"/admin/
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <ActionButton action={loadCitoTeams.bind(null, id)} label={t("loadTeams")} />
           <ActionButton action={loadCitoMatches.bind(null, id)} label={t("loadMatches")} />
+          <ActionButton action={syncRanks.bind(null, id)} label={t("syncRanks")} />
           <ActionButton action={loadCitoStats.bind(null, id)} label={t("loadStats", { max: 5 })} />
           <ActionButton action={fillFake.bind(null, id)} label={t("fillFake")} />
           <ActionButton action={simulateMatches.bind(null, id, 1)} label={t("simulateNext")} />
@@ -75,6 +77,7 @@ export default async function AdminTournamentPage({ params }: PageProps<"/admin/
           <ActionButton action={rescore.bind(null, id)} label={t("rescore")} />
           <ActionButton action={clearData.bind(null, id)} label={t("clearData")} confirmLabel={t("clearConfirm")} variant="danger" />
         </div>
+        <AddTeamForm tournamentId={id} />
       </section>
 
       <section className="card grid gap-4">

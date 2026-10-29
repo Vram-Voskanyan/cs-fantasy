@@ -27,6 +27,9 @@ export type BuilderProps = {
 
 type Sort = "priceDesc" | "priceAsc" | "rating";
 
+// Case- and accent-insensitive search text.
+const normalize = (text: string) => text.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+
 export function TeamBuilder(props: BuilderProps) {
   const t = useTranslations();
   const format = useFormatter();
@@ -62,8 +65,13 @@ export function TeamBuilder(props: BuilderProps) {
     return props.roles.find((r) => !props.uniqueRoles || !used.has(r.id))?.id ?? null;
   }
 
+  const needle = normalize(query.trim());
   const visible = props.pool
-    .filter((p) => (!teamFilter || p.teamId === teamFilter) && p.nickname.toLowerCase().includes(query.trim().toLowerCase()))
+    .filter(
+      (p) =>
+        (!teamFilter || p.teamId === teamFilter) &&
+        (!needle || [p.nickname, p.teamName, p.teamTag, p.countryCode, p.citoRole].some((field) => field && normalize(field).includes(needle))),
+    )
     .sort((a, b) => (sort === "priceAsc" ? a.price - b.price : sort === "rating" ? (b.rating ?? 0) - (a.rating ?? 0) : b.price - a.price));
 
   function save() {

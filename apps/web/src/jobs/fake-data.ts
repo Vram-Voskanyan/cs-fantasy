@@ -8,7 +8,7 @@ import type { CitoGame, CitoMatch, CitoParticipant, CitoPlayerStat, CitoRosterEn
 import { ingestGames, ingestMatches, ingestParticipants, ingestRoster, ingestTeams, type Provider, resolveIds } from "./ingest";
 import { scoreMatch } from "./score";
 
-function rng(seedText: string) {
+export function rng(seedText: string) {
   let h = 2166136261;
   for (let i = 0; i < seedText.length; i++) h = Math.imul(h ^ seedText.charCodeAt(i), 16777619);
   return () => {
@@ -30,6 +30,7 @@ const COUNTRIES: [string, string][] = [
   ["Finland", "FI"], ["United States", "US"], ["Latvia", "LV"], ["Israel", "IL"], ["Mongolia", "MN"], ["Armenia", "AM"],
 ];
 const ROLES = ["AWPer", "Rifler", "Rifler", "Entry", "IGL"];
+const GROUP_STAGE = "Group stage";
 const MAPS = ["Ancient", "Anubis", "Dust2", "Inferno", "Mirage", "Nuke", "Train"];
 
 type FakeTournament = {
@@ -109,6 +110,12 @@ export function generateFakeTournament(t: Tournament): FakeTournament {
   return { teams, participants, rosters, matches: generateSchedule(t, teams) };
 }
 
+/** The teams a fake schedule uses: the best 16 (or 8) by VRS rank, then by ID. */
+export function scheduleTeams(allTeams: CitoTeam[]) {
+  const size = allTeams.length >= 16 ? 16 : 8;
+  return [...allTeams].sort((a, b) => (a.vrsRanking ?? 999) - (b.vrsRanking ?? 999) || a.id.localeCompare(b.id)).slice(0, size);
+}
+
 /**
  * Fake match schedule for the given teams (fake or real): 3 group rounds, then quarter-finals (16 teams)
  * or semi-finals (8), and a BO5 final. Deterministic for the same tournament and team list.
@@ -117,11 +124,12 @@ export function generateSchedule(t: Tournament, allTeams: CitoTeam[]): CitoMatch
   const rand = rng(`schedule:${t.id}`);
   const prefix = `fake-${t.id.slice(0, 8)}`;
   const size = allTeams.length >= 16 ? 16 : 8;
-  const teams = allTeams.slice(0, size);
+  const teams = scheduleTeams(allTeams);
   const start = t.startsAt ? t.startsAt.getTime() : Date.now() + 2 * 86_400_000;
   const hour = 3_600_000;
   const matches: CitoMatch[] = [];
-  const addMatch = (stageName: string, a: CitoTeam, b: CitoTeam, startsAt: number, bestOf: number) => {
+  // Playoff teams are TBD (null) until the previous round is played, as in Cito.
+  const addMatch = (stageName: string, a: CitoTeam | null, b: CitoTeam | null, startsAt: number, bestOf: number) => {
     matches.push({
       id: `${prefix}-match-${matches.length + 1}`,
       eventId: t.id,
@@ -130,8 +138,8 @@ export function generateSchedule(t: Tournament, allTeams: CitoTeam[]): CitoMatch
       endsAt: null,
       bestOf,
       status: "upcoming",
-      team1Id: a.id,
-      team2Id: b.id,
+      team1Id: a?.id ?? null,
+      team2Id: b?.id ?? null,
       team1Score: null,
       team2Score: null,
       winnerTeamId: null,
@@ -144,19 +152,15 @@ export function generateSchedule(t: Tournament, allTeams: CitoTeam[]): CitoMatch
   for (let round = 0; round < 3; round++) {
     const order = [...teams].sort(() => rand() - 0.5);
     for (let i = 0; i < order.length; i += 2) {
-      addMatch("Group stage", order[i], order[i + 1], start + round * 24 * hour + (i / 2) * 2 * hour, 3);
+      addMatch(GROUP_STAGE, order[i], order[i + 1], start + round * 24 * hour + (i / 2) * 2 * hour, 3);
     }
   }
   const playoffStart = start + 4 * 24 * hour;
-  const seeded = [...teams].sort(() => rand() - 0.5);
-  const firstRound = size === 16 ? 4 : 2;
-  for (let i = 0; i < firstRound; i++) {
-    addMatch(size === 16 ? "Quarter-finals" : "Semi-finals", seeded[i * 2], seeded[i * 2 + 1], playoffStart + i * 3 * hour, 3);
-  }
   if (size === 16) {
-    for (let i = 0; i < 2; i++) addMatch("Semi-finals", seeded[8 + i * 2], seeded[9 + i * 2], playoffStart + 24 * hour + i * 3 * hour, 3);
+    for (let i = 0; i < 4; i++) addMatch("Quarter-finals", null, null, playoffStart + i * 3 * hour, 3);
   }
-  addMatch("Grand final", seeded[12 % size], seeded[13 % size], playoffStart + 2 * 24 * hour, 5);
+  for (let i = 0; i < 2; i++) addMatch("Semi-finals", null, null, playoffStart + (size === 16 ? 24 : 0) * hour + i * 3 * hour, 3);
+  addMatch("Grand final", null, null, playoffStart + (size === 16 ? 48 : 24) * hour, 5);
   return matches;
 }
 
@@ -326,11 +330,26 @@ export async function fillFakeTournament(db: Db, tournament: Tournament) {
   const real = await loadRealTeams(db, tournament);
   if (real) {
     const matches = generateSchedule(tournament, real.teams);
+    // Teams outside the fake schedule leave the tournament (and its player pool).
+    const playing = new Set(scheduleTeams(real.teams).map((t) => t.id));
+    const { map: teamIds } = await resolveIds(
+      db,
+      "cito",
+      "team",
+      real.teams.map((t) => t.id),
+    );
+    const dropped = real.teams.filter((t) => !playing.has(t.id)).map((t) => teamIds.get(t.id)!);
+    if (dropped.length > 0) {
+      await db.batch([
+        db.delete(schema.poolPlayers).where(and(eq(schema.poolPlayers.tournamentId, tournament.id), inArray(schema.poolPlayers.teamId, dropped))),
+        db.delete(schema.tournamentTeams).where(and(eq(schema.tournamentTeams.tournamentId, tournament.id), inArray(schema.tournamentTeams.teamId, dropped))),
+      ]);
+    }
     await db.delete(schema.matches).where(eq(schema.matches.tournamentId, tournament.id));
     await ingestMatches(db, "cito", tournament.id, matches);
     await db.update(schema.tournaments).set({ dataSource: "fake" }).where(eq(schema.tournaments.id, tournament.id));
-    const players = [...real.rosters.values()].reduce((n, r) => n + r.length, 0);
-    return { teams: real.teams.length, players, matches: matches.length, realTeams: true };
+    const players = [...playing].reduce((n, id) => n + (real.rosters.get(id)?.length ?? 0), 0);
+    return { teams: playing.size, players, matches: matches.length, realTeams: true };
   }
   const fake = generateFakeTournament(tournament);
   await ingestTeams(db, "fake", fake.teams);
@@ -339,6 +358,66 @@ export async function fillFakeTournament(db: Db, tournament: Tournament) {
   await ingestMatches(db, "fake", tournament.id, fake.matches);
   await db.update(schema.tournaments).set({ dataSource: "fake" }).where(eq(schema.tournaments.id, tournament.id));
   return { teams: fake.teams.length, players: fake.teams.length * 5, matches: fake.matches.length, realTeams: false };
+}
+
+/**
+ * Fills a TBD playoff match: the first playoff round is seeded from group standings (wins, map difference,
+ * VRS rank), later rounds take the winners of the two matches that feed them.
+ */
+async function resolvePlayoffTeams(db: Db, ctx: FakeContext, match: CitoMatch): Promise<CitoMatch | null> {
+  const playoffStages = [...new Set(ctx.matches.map((m) => m.stageName))].filter((n) => n !== GROUP_STAGE);
+  const roundIndex = playoffStages.indexOf(match.stageName);
+  const round = ctx.matches.filter((m) => m.stageName === match.stageName);
+  const position = round.findIndex((m) => m.id === match.id);
+  const { map: teamIds } = await resolveIds(
+    db,
+    ctx.provider,
+    "team",
+    ctx.teams.map((t) => t.id),
+  );
+  const providerTeam = new Map([...teamIds].map(([providerId, internalId]) => [internalId, providerId]));
+  const teamByProvider = new Map(ctx.teams.map((t) => [t.id, t]));
+
+  async function matchRows(list: CitoMatch[]) {
+    const { map } = await resolveIds(
+      db,
+      ctx.provider,
+      "match",
+      list.map((m) => m.id),
+    );
+    const rows = await db.select().from(schema.matches).where(inArray(schema.matches.id, [...map.values()]));
+    return list.map((m) => rows.find((r) => r.id === map.get(m.id)));
+  }
+
+  let pair: [string, string];
+  if (roundIndex === 0) {
+    const group = ctx.matches.filter((m) => m.stageName === GROUP_STAGE);
+    const table = new Map<string, { wins: number; diff: number }>();
+    for (const m of group) for (const id of [m.team1Id, m.team2Id]) if (id) table.set(id, { wins: 0, diff: 0 });
+    for (const row of await matchRows(group)) {
+      if (!row || row.status !== "completed" || !row.winnerTeamId || !row.team1Id || !row.team2Id) continue;
+      const t1 = table.get(providerTeam.get(row.team1Id)!)!;
+      const t2 = table.get(providerTeam.get(row.team2Id)!)!;
+      const d = (row.team1Score ?? 0) - (row.team2Score ?? 0);
+      t1.diff += d;
+      t2.diff -= d;
+      (row.winnerTeamId === row.team1Id ? t1 : t2).wins += 1;
+    }
+    const rank = (id: string) => teamByProvider.get(id)?.vrsRanking ?? 999;
+    const ranked = [...table.entries()].sort((a, b) => b[1].wins - a[1].wins || b[1].diff - a[1].diff || rank(a[0]) - rank(b[0])).map(([id]) => id);
+    // Standard seeding: 1v8, 4v5, 2v7, 3v6 (or 1v4, 2v3).
+    const order = round.length === 4 ? [[0, 7], [3, 4], [1, 6], [2, 5]] : [[0, 3], [1, 2]];
+    const [a, b] = order[position];
+    pair = [ranked[a], ranked[b]];
+  } else {
+    const previous = ctx.matches.filter((m) => m.stageName === playoffStages[roundIndex - 1]);
+    const rows = await matchRows([previous[position * 2], previous[position * 2 + 1]]);
+    const winners = rows.map((r) => (r?.winnerTeamId ? providerTeam.get(r.winnerTeamId) : undefined));
+    if (!winners[0] || !winners[1]) return null;
+    pair = [winners[0], winners[1]];
+  }
+  const [team1, team2] = pair.map((id) => teamByProvider.get(id)!);
+  return { ...match, team1Id: team1.id, team2Id: team2.id, team1, team2 };
 }
 
 /** Plays the next scheduled fake match: map results, player stats, then scoring. */
@@ -357,7 +436,12 @@ export async function simulateNextMatch(db: Db, tournament: Tournament) {
     .orderBy(asc(schema.matches.startsAt))
     .limit(1);
   if (open.length === 0) return null;
-  const match = ctx.matches.find((m) => ids.get(m.id) === open[0].id)!;
+  let match = ctx.matches.find((m) => ids.get(m.id) === open[0].id)!;
+  if (!match.team1Id || !match.team2Id) {
+    const resolved = await resolvePlayoffTeams(db, ctx, match);
+    if (!resolved) return null;
+    match = resolved;
+  }
   const { games, winner, score } = simulateGames(match, ctx.rosters);
   const finished: CitoMatch = {
     ...match,
@@ -383,7 +467,37 @@ export async function simulateNextMatch(db: Db, tournament: Tournament) {
   await ingestMatches(db, ctx.provider, tournament.id, [finished]);
   const result = await ingestGames(db, ctx.provider, match.id, games);
   await scoreMatch(db, result.matchId);
+  await fillReadyPlayoffs(db, ctx, tournament);
   return { matchId: result.matchId, maps: games.length };
+}
+
+/** Shows playoff pairings as soon as they are known (group finished, or both feeder matches played). */
+async function fillReadyPlayoffs(db: Db, ctx: FakeContext, tournament: Tournament) {
+  const playoff = ctx.matches.filter((m) => m.stageName !== GROUP_STAGE);
+  const { map: ids } = await resolveIds(
+    db,
+    ctx.provider,
+    "match",
+    playoff.map((m) => m.id),
+  );
+  const rows = await db.select().from(schema.matches).where(inArray(schema.matches.id, [...ids.values()]));
+  const group = ctx.matches.filter((m) => m.stageName === GROUP_STAGE);
+  const { map: groupIds } = await resolveIds(
+    db,
+    ctx.provider,
+    "match",
+    group.map((m) => m.id),
+  );
+  const groupRows = await db.select({ status: schema.matches.status }).from(schema.matches).where(inArray(schema.matches.id, [...groupIds.values()]));
+  const groupDone = groupRows.length > 0 && groupRows.every((r) => r.status === "completed");
+  const firstStage = playoff[0]?.stageName;
+  for (const m of playoff) {
+    const row = rows.find((r) => r.id === ids.get(m.id));
+    if (!row || (row.team1Id && row.team2Id)) continue;
+    if (m.stageName === firstStage && !groupDone) continue;
+    const resolved = await resolvePlayoffTeams(db, ctx, m);
+    if (resolved) await ingestMatches(db, ctx.provider, tournament.id, [resolved]);
+  }
 }
 
 export async function getTournamentById(env: CloudflareEnv, id: string) {

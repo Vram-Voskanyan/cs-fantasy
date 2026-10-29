@@ -1,5 +1,6 @@
 import { schema } from "@cs-vv-fantasy/db";
 import { and, desc, eq } from "drizzle-orm";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getFormatter, getTranslations } from "next-intl/server";
 import { PageShell } from "@/components/page-shell";
@@ -21,7 +22,7 @@ export default async function PlayerPage({ params }: PageProps<"/players/[slug]"
     getTranslations("player"),
     getFormatter(),
     db
-      .select({ team: schema.teams.name, tag: schema.teams.tag, role: schema.teamPlayers.role })
+      .select({ team: schema.teams.name, slug: schema.teams.slug, tag: schema.teams.tag, role: schema.teamPlayers.role })
       .from(schema.teamPlayers)
       .innerJoin(schema.teams, eq(schema.teams.id, schema.teamPlayers.teamId))
       .where(and(eq(schema.teamPlayers.playerId, player.id), eq(schema.teamPlayers.isActive, true)))
@@ -57,7 +58,14 @@ export default async function PlayerPage({ params }: PageProps<"/players/[slug]"
   const num = (n: number | null, digits = 2) => (n === null ? "–" : format.number(n, { minimumFractionDigits: digits, maximumFractionDigits: digits }));
   const pct = (n: number | null) => (n === null ? "–" : format.number(n, { style: "percent", maximumFractionDigits: 0 }));
   const facts = [
-    { label: t("team"), value: team ? team.team : null },
+    {
+      label: t("team"),
+      value: team ? (
+        <Link href={`/teams/${team.slug}`} className="hover:underline">
+          {team.team}
+        </Link>
+      ) : null,
+    },
     { label: t("role"), value: team?.role ?? null },
     { label: t("country"), value: player.countryName },
     { label: t("age"), value: player.age === null ? null : String(player.age) },
