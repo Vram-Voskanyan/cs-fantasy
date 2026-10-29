@@ -19,7 +19,7 @@ function toStatus(event: CitoEvent, now: number): Status {
 const toDate = (value: string | null) => (value ? new Date(value) : null);
 
 // One provider call: live events plus the next upcoming ones.
-export async function syncEvents(env: Env) {
+export async function syncEvents(env: CloudflareEnv) {
   const started = Date.now();
   const { body } = await citoGet<CitoEvent>(env.CITO_API_KEY, "/cs2/events/active", {
     includeUpcoming: "true",

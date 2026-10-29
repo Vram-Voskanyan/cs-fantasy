@@ -295,7 +295,7 @@ flowchart LR
 | Database | Cloudflare D1 (SQLite) with Drizzle ORM | 10 GB per database on the paid plan. Migrations with `drizzle-kit` and `wrangler d1 migrations`. |
 | Cache | KV and the Workers Cache API | Leaderboard pages, player lists, tournament pages. |
 | Object storage | R2 | Raw provider payloads, team logos, player photos. |
-| Auth | Better Auth with the Drizzle adapter on D1 | MVP: email and password only (`emailAndPassword`), with email verification and password reset. Later: Google, maybe Steam (good fit for the CS audience). Better Auth adds these as providers without schema rework. |
+| Auth | Better Auth with the Drizzle adapter on D1 | MVP: email and password only (`emailAndPassword`), password reset by email, no email verification. Later: Google, maybe Steam (good fit for the CS audience). Better Auth adds these as providers without schema rework. |
 | Bot protection | Cloudflare Turnstile, Workers rate limiting | On sign-up, login and team save. |
 | Email | Resend (or similar) | Email verification, password reset, lock reminders. |
 | Monitoring | Workers Logs, Sentry (`@sentry/cloudflare`) | Alert if a match is live but no stats arrive for 10 minutes. |
@@ -491,7 +491,7 @@ Visual design (colors, fonts, buttons, cards, motion): `docs/DESIGN.md`, with a 
 ## 9. Security, abuse and compliance (MVP)
 
 - Turnstile and rate limits on sign-up, login, password reset and roster save.
-- Passwords: hashed by Better Auth (scrypt), minimum length 10, email verification required before the first team save, password reset links expire in 1 hour, all sessions revoked on password change.
+- Passwords: hashed by Better Auth (scrypt), minimum length 10, password reset links expire in 1 hour, all sessions revoked on password change. Email verification is off for the MVP.
 - One fantasy team per account per tournament. Multi-accounting is low risk while the game is free. It becomes critical in Phase 2.
 - Admin routes need an admin role and are logged in `audit_log`.
 - GDPR basics: data export and account deletion, minimal cookies, privacy policy.
@@ -590,7 +590,10 @@ Estimates assume 1 to 2 full-time developers.
 | Sign-in | Email and password only. Google, maybe Steam, later. |
 | Project name | cs-vv-fantasy. |
 | Domain | MVP runs on the Cloudflare `workers.dev` subdomain. Custom domain in the next phase. |
-| Git flow | Push directly to `main`, no pull requests for now. |
+| Git flow | Push directly to `main`, no pull requests for now. A push deploys staging, then production. |
+| Workers | One Worker per environment (web app plus background jobs), see `docs/decisions/0002-one-worker-per-environment.md`. |
+| Email verification | Off for the MVP. |
+| Data fields | Only fields the Cito API provides. Production may hold fake data (same shape as Cito) until launch; reset before going live. |
 
 ### 13.2 Still open
 

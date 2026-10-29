@@ -5,7 +5,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
 import { PASSWORD_MAX, PASSWORD_MIN } from "./auth-rules";
-import { sendAuthEmail } from "./email";
+import { sendPasswordResetEmail } from "./email";
 
 function createAuth(env: CloudflareEnv) {
   return betterAuth({
@@ -18,16 +18,11 @@ function createAuth(env: CloudflareEnv) {
       enabled: true,
       minPasswordLength: PASSWORD_MIN,
       maxPasswordLength: PASSWORD_MAX,
-      // Verification becomes required before the first team save (M3), not at sign-in.
+      // Email verification is off for the MVP (decision 2026-10-29, docs/PLAN.md section 13).
       requireEmailVerification: false,
       resetPasswordTokenExpiresIn: 60 * 60,
       revokeSessionsOnPasswordReset: true,
-      sendResetPassword: async ({ user, url }) => sendAuthEmail(env, user.email, "reset", url),
-    },
-    emailVerification: {
-      sendOnSignUp: true,
-      autoSignInAfterVerification: true,
-      sendVerificationEmail: async ({ user, url }) => sendAuthEmail(env, user.email, "verify", url),
+      sendResetPassword: async ({ user, url }) => sendPasswordResetEmail(env, user.email, url),
     },
     user: {
       additionalFields: {

@@ -11,4 +11,5 @@ The product and technical plan is `docs/PLAN.md`. Read it before starting a feat
 - **UI follows `docs/DESIGN.md`.** Use design tokens only (no raw hex in components). Reference CSS for buttons, cards and motion: `docs/design-preview.html`. Respect `prefers-reduced-motion`.
 - **Validate team rules on the server**, with values from the active game config. Enforce locks with server time.
 - **Money-like values are integers** (credits × 10, cents). Never floats.
-- **Git:** commit and push directly to `main`. No pull requests for now.
+- **Git:** commit and push directly to `main`. No pull requests for now. A push to `main` deploys staging, then production.
+- **Data fields match the Cito API.** Store and show only fields the provider actually returns (see `docs/PLAN.md` section 4.2). Fake data for testing uses the same shape. Production may hold fake data until launch; it is reset before going live.

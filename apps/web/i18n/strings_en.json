@@ -43,8 +43,6 @@
     "title": "Your account",
     "name": "Display name",
     "email": "Email",
-    "emailVerified": "Email verified",
-    "emailNotVerified": "Email not verified yet. Check your inbox.",
     "memberSince": "Member since"
   },
   "errors": {
@@ -58,8 +56,6 @@
     "generic": "Something went wrong. Try again."
   },
   "email": {
-    "verifySubject": "Confirm your email for cs-vv-fantasy",
-    "verifyBody": "Open this link to confirm your email: {url}",
     "resetSubject": "Reset your cs-vv-fantasy password",
     "resetBody": "Open this link to set a new password: {url}. The link expires in 1 hour. If you did not ask for this, ignore this email."
   },

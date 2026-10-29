@@ -22,9 +22,6 @@ export default async function AccountPage() {
           <div>
             <p className="label">{t("email")}</p>
             <p>{user.email}</p>
-            <p className={user.emailVerified ? "text-sm text-positive" : "text-sm text-warning"}>
-              {user.emailVerified ? t("emailVerified") : t("emailNotVerified")}
-            </p>
           </div>
           <div>
             <p className="label">{t("memberSince")}</p>

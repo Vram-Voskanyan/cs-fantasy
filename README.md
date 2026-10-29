@@ -9,8 +9,7 @@ Fantasy game for professional CS2 tournaments. Next.js on Cloudflare Workers.
 ## Repository
 
 ```
-apps/web        Next.js app (OpenNext on Workers): pages, auth, API
-apps/worker     Background Worker: data ingest (cron) and scoring (queue)
+apps/web        Next.js app on Workers (OpenNext) plus background jobs (cron data sync, scoring queue)
 packages/db     Drizzle schema and D1 migrations, shared by both apps
 tests/          Repository checks (for example, strings files)
 docs/           Plan, design system, Cloudflare setup, decisions
@@ -33,7 +32,7 @@ APP_ENV=development
 APP_URL=http://localhost:3000
 BETTER_AUTH_SECRET=$(openssl rand -base64 32)
 EOF
-printf 'APP_ENV=development\nCITO_API_KEY=<your key>\nSYNC_TOKEN=%s\n' "$(openssl rand -hex 24)" > apps/worker/.dev.vars
+printf 'CITO_API_KEY=<your key>\nSYNC_TOKEN=%s\n' "$(openssl rand -hex 24)" >> apps/web/.dev.vars
 
 npm run db:migrate:local   # creates the local D1 database
 ```
@@ -43,10 +42,11 @@ npm run db:migrate:local   # creates the local D1 database
 | Command | What it does |
 |---|---|
 | `npm run dev` | Next.js dev server with hot reload and local Cloudflare bindings (D1, KV, R2). Port 3000, or the next free port. |
-| `npm run preview` | Builds the real Worker bundle and runs it in the local Workers runtime on http://localhost:8787. Use this to check behavior before a deploy. |
-| `npm run dev:worker` | Background worker on http://localhost:8788, sharing the web app's local database. Load tournaments with `curl -X POST -H "Authorization: Bearer <SYNC_TOKEN from apps/worker/.dev.vars>" http://localhost:8788/sync/events` (uses 1 Cito call; the free plan has 500 per month). |
+| `npm run preview` | Builds the real Worker bundle and runs it in the local Workers runtime on http://localhost:8787, with the cron handler enabled. Use this to check behavior before a deploy. |
 
-Without an email provider, verification and password reset links are printed in the dev server log.
+Load tournaments locally (1 Cito call; the free plan has 500 per month): `curl -X POST -H "Authorization: Bearer <SYNC_TOKEN from apps/web/.dev.vars>" http://localhost:3000/api/internal/sync/events`. In `npm run preview`, you can also run the cron: `curl "http://localhost:8787/__scheduled?cron=0+*/6+*+*+*"`.
+
+Without an email provider, password reset links are printed in the dev server log. Email verification is off for the MVP.
 
 ## Checks
 
@@ -64,10 +64,10 @@ npm run check   # lint + typecheck + tests
 
 | Target | How |
 |---|---|
-| Staging | Automatic on every push to `main` (GitHub Actions), once the `CLOUDFLARE_API_TOKEN` secret is set. From your machine: `npm run deploy:staging`. |
-| Production | GitHub → Actions → "Deploy production" → Run workflow. From your machine: `npm run deploy:production`. |
+| Staging, then production | Automatic on every push to `main` (GitHub Actions), once the `CLOUDFLARE_API_TOKEN` secret is set. Production deploys only if staging is healthy. |
+| From your machine | `npm run deploy:staging`, `npm run deploy:production` |
 
-Both commands apply D1 migrations first, then deploy the web app and the background worker. Check a deploy with `curl <url>/api/health`.
+Both commands apply D1 migrations first, then deploy the Worker. Check a deploy with `curl <url>/api/health`.
 
 ## Rules
 

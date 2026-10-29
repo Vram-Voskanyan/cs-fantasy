@@ -28,10 +28,10 @@ All data resources are in Western Europe (`weur`).
 
 | Worker | URL | Purpose |
 |---|---|---|
-| `cs-vv-fantasy` | https://cs-vv-fantasy.vram-arm.workers.dev | Web app, production |
-| `cs-vv-fantasy-staging` | https://cs-vv-fantasy-staging.vram-arm.workers.dev | Web app, staging |
-| `cs-vv-fantasy-worker` | https://cs-vv-fantasy-worker.vram-arm.workers.dev | Ingest cron and scoring queue consumer, production |
-| `cs-vv-fantasy-worker-staging` | https://cs-vv-fantasy-worker-staging.vram-arm.workers.dev | Same, staging |
+| `cs-vv-fantasy` | https://cs-vv-fantasy.vram-arm.workers.dev | Production: web app, data sync cron, scoring queue consumer |
+| `cs-vv-fantasy-staging` | https://cs-vv-fantasy-staging.vram-arm.workers.dev | Staging: same |
+
+One Worker per environment, see `docs/decisions/0002-one-worker-per-environment.md`.
 
 Health check: `<web url>/api/health` returns `{"ok":true,"env":"...","db":"ok"}`.
 
@@ -41,11 +41,11 @@ Names only. Values live in Cloudflare (`wrangler secret put <NAME>`) and, for lo
 
 | Name | Used by | Status |
 |---|---|---|
-| `CITO_API_KEY` | ingest worker | Set on production and staging (free test key). Local copy in `apps/worker/.dev.vars`. Replace with a paid key before launch. |
+| `CITO_API_KEY` | data sync | Set on production and staging (free test key). Local copy in `apps/web/.dev.vars`. Replace with a paid key before launch. |
 | `BETTER_AUTH_SECRET` | web | Set on production and staging (random, different per environment). Local copy in `apps/web/.dev.vars`. |
 | `RESEND_API_KEY`, `EMAIL_FROM` | web | Needs a Resend account. Until then, emails are not sent. |
 | `TURNSTILE_SECRET_KEY` | web | Needs a Turnstile widget |
-| `SYNC_TOKEN` | ingest worker | Protects `POST /sync/events` (manual tournament sync). Random value, not stored anywhere. To run a manual sync: `wrangler secret put SYNC_TOKEN` with a new value, then `curl -X POST -H "Authorization: Bearer <value>" <worker url>/sync/events`. |
+| `SYNC_TOKEN` | data sync | Protects `POST /api/internal/sync/events` (manual tournament sync). Random value, not stored anywhere. To run a manual sync: `wrangler secret put SYNC_TOKEN` with a new value, then `curl -X POST -H "Authorization: Bearer <value>" <url>/api/internal/sync/events`. |
 
 ## Still to do
 
@@ -55,5 +55,5 @@ Names only. Values live in Cloudflare (`wrangler secret put <NAME>`) and, for lo
    1. Cloudflare dashboard → My Profile → API Tokens → Create Token → "Edit Cloudflare Workers" template.
    2. Add these Account permissions: D1 Edit, Workers KV Storage Edit, Workers R2 Storage Edit, Queues Edit. Account Resources: your account. Zone Resources: none needed.
    3. Copy the token and run `gh secret set CLOUDFLARE_API_TOKEN --repo Vram-Voskanyan/cs-fantasy` (it asks for the value without showing it).
-   After that, every push to `main` deploys staging.
+   After that, every push to `main` deploys staging, then production.
 4. **Custom domain** (next phase): add the domain to Cloudflare, attach it to the `cs-vv-fantasy` Worker, change `APP_URL`.

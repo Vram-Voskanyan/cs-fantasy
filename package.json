@@ -7,7 +7,6 @@
   ],
   "scripts": {
     "dev": "npm run dev -w @cs-vv-fantasy/web",
-    "dev:worker": "npm run dev -w @cs-vv-fantasy/worker",
     "preview": "npm run preview -w @cs-vv-fantasy/web",
     "build": "npm run build -w @cs-vv-fantasy/web",
     "lint": "npm run lint --workspaces --if-present",
@@ -16,8 +15,8 @@
     "check": "npm run lint && npm run typecheck && npm test",
     "db:generate": "npm run generate -w @cs-vv-fantasy/db --",
     "db:migrate:local": "npm run db:migrate:local -w @cs-vv-fantasy/web",
-    "deploy:staging": "npm run db:migrate:staging -w @cs-vv-fantasy/web && npm run deploy:staging -w @cs-vv-fantasy/web && npm run deploy:staging -w @cs-vv-fantasy/worker",
-    "deploy:production": "npm run db:migrate:production -w @cs-vv-fantasy/web && npm run deploy -w @cs-vv-fantasy/web && npm run deploy -w @cs-vv-fantasy/worker"
+    "deploy:staging": "npm run db:migrate:staging -w @cs-vv-fantasy/web && npm run deploy:staging -w @cs-vv-fantasy/web",
+    "deploy:production": "npm run db:migrate:production -w @cs-vv-fantasy/web && npm run deploy -w @cs-vv-fantasy/web"
   },
   "engines": {
     "node": ">=22"
