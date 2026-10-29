@@ -47,3 +47,18 @@ export async function buildPool(db: Db, tournamentId: string, repriceAll: boolea
   }
   return { count: new Set([...existing, ...rows.map((r) => r.playerId)]).size };
 }
+
+/**
+ * Removes a tournament's teams, matches (with maps, stats and points), player pool and fantasy teams,
+ * so it can be reloaded from another source (for example fake data, then real Cito data).
+ * Team and player rows stay: other tournaments may use them.
+ */
+export async function clearTournamentData(db: Db, tournamentId: string) {
+  await db.batch([
+    db.delete(schema.fantasyTeams).where(eq(schema.fantasyTeams.tournamentId, tournamentId)),
+    db.delete(schema.poolPlayers).where(eq(schema.poolPlayers.tournamentId, tournamentId)),
+    db.delete(schema.matches).where(eq(schema.matches.tournamentId, tournamentId)),
+    db.delete(schema.tournamentTeams).where(eq(schema.tournamentTeams.tournamentId, tournamentId)),
+    db.update(schema.tournaments).set({ dataSource: null }).where(eq(schema.tournaments.id, tournamentId)),
+  ]);
+}

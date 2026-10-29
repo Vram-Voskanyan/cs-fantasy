@@ -5,7 +5,7 @@
 import { createDb, type Db, schema, type Tournament } from "@cs-vv-fantasy/db";
 import { and, asc, eq, inArray, ne } from "drizzle-orm";
 import type { CitoGame, CitoMatch, CitoParticipant, CitoPlayerStat, CitoRosterEntry, CitoTeam } from "./cito";
-import { ingestGames, ingestMatches, ingestParticipants, ingestRoster, ingestTeams, resolveIds } from "./ingest";
+import { ingestGames, ingestMatches, ingestParticipants, ingestRoster, ingestTeams, type Provider, resolveIds } from "./ingest";
 import { scoreMatch } from "./score";
 
 function rng(seedText: string) {
@@ -106,7 +106,18 @@ export function generateFakeTournament(t: Tournament): FakeTournament {
     status: "registered",
   }));
 
-  // Schedule: 3 group rounds (all teams), then quarter-finals (16 teams) or semi-finals (8), and a BO5 final.
+  return { teams, participants, rosters, matches: generateSchedule(t, teams) };
+}
+
+/**
+ * Fake match schedule for the given teams (fake or real): 3 group rounds, then quarter-finals (16 teams)
+ * or semi-finals (8), and a BO5 final. Deterministic for the same tournament and team list.
+ */
+export function generateSchedule(t: Tournament, allTeams: CitoTeam[]): CitoMatch[] {
+  const rand = rng(`schedule:${t.id}`);
+  const prefix = `fake-${t.id.slice(0, 8)}`;
+  const size = allTeams.length >= 16 ? 16 : 8;
+  const teams = allTeams.slice(0, size);
   const start = t.startsAt ? t.startsAt.getTime() : Date.now() + 2 * 86_400_000;
   const hour = 3_600_000;
   const matches: CitoMatch[] = [];
@@ -146,8 +157,7 @@ export function generateFakeTournament(t: Tournament): FakeTournament {
     for (let i = 0; i < 2; i++) addMatch("Semi-finals", seeded[8 + i * 2], seeded[9 + i * 2], playoffStart + 24 * hour + i * 3 * hour, 3);
   }
   addMatch("Grand final", seeded[12 % size], seeded[13 % size], playoffStart + 2 * 24 * hour, 5);
-
-  return { teams, participants, rosters, matches };
+  return matches;
 }
 
 // Cito Rating 1.0 per map (from the API docs): 0.30*KPR/0.683 + 0.25*(1-DPR)/0.305 + 0.25*ADR/74.1 + 0.15*KAST/0.716 + 0.05*APR/0.223
@@ -231,25 +241,114 @@ function simulateGames(match: CitoMatch, rosters: Map<string, CitoRosterEntry[]>
   return { games, winner: wins1 > wins2 ? team1.id : team2.id, score: [wins1, wins2] };
 }
 
-/** Replaces the tournament's teams, rosters and schedule with fake data. */
+type FakeContext = {
+  // Provider of the team and player IDs: "cito" when real teams are loaded, else "fake".
+  provider: Provider;
+  teams: CitoTeam[];
+  rosters: Map<string, CitoRosterEntry[]>;
+  matches: CitoMatch[];
+};
+
+/** The tournament's real Cito teams and active rosters, in Cito shape, or null if none are loaded. */
+async function loadRealTeams(db: Db, t: Tournament) {
+  const rows = await db
+    .select({ team: schema.teams, providerId: schema.externalIds.providerId })
+    .from(schema.tournamentTeams)
+    .innerJoin(schema.teams, eq(schema.teams.id, schema.tournamentTeams.teamId))
+    .innerJoin(
+      schema.externalIds,
+      and(eq(schema.externalIds.provider, "cito"), eq(schema.externalIds.entityType, "team"), eq(schema.externalIds.internalId, schema.teams.id)),
+    )
+    .where(eq(schema.tournamentTeams.tournamentId, t.id))
+    .orderBy(asc(schema.externalIds.providerId));
+  if (rows.length < 2) return null;
+  const teams: CitoTeam[] = rows.map(({ team, providerId }) => ({
+    id: providerId,
+    name: team.name,
+    slug: team.slug,
+    teamTag: team.tag,
+    countryName: team.countryName,
+    countryCode: team.countryCode,
+    region: team.region,
+    worldRanking: team.worldRanking,
+    vrsRanking: team.vrsRanking,
+    logoUrl: team.logoUrl,
+  }));
+  const providerByTeam = new Map(rows.map((r) => [r.team.id, r.providerId]));
+  const members = await db
+    .select({ teamId: schema.teamPlayers.teamId, role: schema.teamPlayers.role, player: schema.players, providerId: schema.externalIds.providerId })
+    .from(schema.teamPlayers)
+    .innerJoin(schema.players, eq(schema.players.id, schema.teamPlayers.playerId))
+    .innerJoin(
+      schema.externalIds,
+      and(eq(schema.externalIds.provider, "cito"), eq(schema.externalIds.entityType, "player"), eq(schema.externalIds.internalId, schema.players.id)),
+    )
+    .where(and(inArray(schema.teamPlayers.teamId, [...providerByTeam.keys()]), eq(schema.teamPlayers.isActive, true)))
+    .orderBy(asc(schema.externalIds.providerId));
+  const rosters = new Map<string, CitoRosterEntry[]>();
+  for (const m of members) {
+    const teamProviderId = providerByTeam.get(m.teamId)!;
+    const list = rosters.get(teamProviderId) ?? [];
+    list.push({
+      teamId: teamProviderId,
+      playerId: m.providerId,
+      playerNickname: m.player.nickname,
+      playerName: m.player.realName,
+      playerImageUrl: m.player.imageUrl,
+      playerSlug: m.player.slug,
+      countryName: m.player.countryName,
+      countryCode: m.player.countryCode,
+      age: m.player.age,
+      rating: m.player.rating,
+      mapsPlayed: m.player.mapsPlayed,
+      role: m.role,
+      fromAt: null,
+      toAt: null,
+      isActive: true,
+    });
+    rosters.set(teamProviderId, list);
+  }
+  return { teams, rosters };
+}
+
+async function fakeContext(db: Db, t: Tournament): Promise<FakeContext> {
+  const real = await loadRealTeams(db, t);
+  if (real) return { provider: "cito", teams: real.teams, rosters: real.rosters, matches: generateSchedule(t, real.teams) };
+  const fake = generateFakeTournament(t);
+  return { provider: "fake", teams: fake.teams, rosters: fake.rosters, matches: fake.matches };
+}
+
+/**
+ * Fake test data. With real Cito teams loaded: keeps the real teams and players and replaces the matches
+ * with a fake schedule. Without: creates fake teams, rosters and schedule.
+ */
 export async function fillFakeTournament(db: Db, tournament: Tournament) {
+  const real = await loadRealTeams(db, tournament);
+  if (real) {
+    const matches = generateSchedule(tournament, real.teams);
+    await db.delete(schema.matches).where(eq(schema.matches.tournamentId, tournament.id));
+    await ingestMatches(db, "cito", tournament.id, matches);
+    await db.update(schema.tournaments).set({ dataSource: "fake" }).where(eq(schema.tournaments.id, tournament.id));
+    const players = [...real.rosters.values()].reduce((n, r) => n + r.length, 0);
+    return { teams: real.teams.length, players, matches: matches.length, realTeams: true };
+  }
   const fake = generateFakeTournament(tournament);
   await ingestTeams(db, "fake", fake.teams);
   for (const [teamId, roster] of fake.rosters) await ingestRoster(db, "fake", teamId, roster);
   await ingestParticipants(db, "fake", tournament.id, fake.participants);
   await ingestMatches(db, "fake", tournament.id, fake.matches);
   await db.update(schema.tournaments).set({ dataSource: "fake" }).where(eq(schema.tournaments.id, tournament.id));
-  return { teams: fake.teams.length, players: fake.teams.length * 5, matches: fake.matches.length };
+  return { teams: fake.teams.length, players: fake.teams.length * 5, matches: fake.matches.length, realTeams: false };
 }
 
 /** Plays the next scheduled fake match: map results, player stats, then scoring. */
 export async function simulateNextMatch(db: Db, tournament: Tournament) {
-  const fake = generateFakeTournament(tournament);
+  const ctx = await fakeContext(db, tournament);
   const { map: ids } = await resolveIds(
     db,
-    "fake",
+    ctx.provider,
     "match",
-    fake.matches.map((m) => m.id),
+    ctx.matches.map((m) => m.id),
   );
   const open = await db
     .select({ id: schema.matches.id })
@@ -258,8 +357,8 @@ export async function simulateNextMatch(db: Db, tournament: Tournament) {
     .orderBy(asc(schema.matches.startsAt))
     .limit(1);
   if (open.length === 0) return null;
-  const match = fake.matches.find((m) => ids.get(m.id) === open[0].id)!;
-  const { games, winner, score } = simulateGames(match, fake.rosters);
+  const match = ctx.matches.find((m) => ids.get(m.id) === open[0].id)!;
+  const { games, winner, score } = simulateGames(match, ctx.rosters);
   const finished: CitoMatch = {
     ...match,
     status: "completed",
@@ -281,8 +380,8 @@ export async function simulateNextMatch(db: Db, tournament: Tournament) {
       isForfeit: g.isForfeit,
     })),
   };
-  await ingestMatches(db, "fake", tournament.id, [finished]);
-  const result = await ingestGames(db, "fake", match.id, games);
+  await ingestMatches(db, ctx.provider, tournament.id, [finished]);
+  const result = await ingestGames(db, ctx.provider, match.id, games);
   await scoreMatch(db, result.matchId);
   return { matchId: result.matchId, maps: games.length };
 }

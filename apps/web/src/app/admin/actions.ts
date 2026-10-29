@@ -5,7 +5,7 @@ import { DEFAULT_GAME_CONFIG, parseGameConfig } from "@cs-vv-fantasy/scoring";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { and, eq, inArray, max } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { buildPool as buildPoolOp, setFantasyStatus as setStatus } from "@/jobs/admin-ops";
+import { buildPool as buildPoolOp, clearTournamentData, setFantasyStatus as setStatus } from "@/jobs/admin-ops";
 import { fillFakeTournament, getTournamentById, simulateNextMatch } from "@/jobs/fake-data";
 import { getGameConfig, getStages } from "@/jobs/game";
 import { recomputeTournamentScores, rescoreTournament } from "@/jobs/score";
@@ -67,7 +67,14 @@ export async function saveStages(tournamentId: string, stages: { id?: string; na
 export async function loadCitoTeams(tournamentId: string): Promise<ActionResult> {
   return run(async () => {
     const r = await syncTournamentTeams(await env(), tournamentId);
-    return { ok: true, key: "teams", values: { teams: r.teams, players: r.players } };
+    return { ok: true, key: "teams", values: { teams: r.teams, players: r.players, calls: r.calls } };
+  }, `/admin/tournaments/${tournamentId}`);
+}
+
+export async function clearData(tournamentId: string): Promise<ActionResult> {
+  return run(async () => {
+    await clearTournamentData(await getDb(), tournamentId);
+    return { ok: true, key: "cleared" };
   }, `/admin/tournaments/${tournamentId}`);
 }
 
@@ -89,8 +96,8 @@ export async function fillFake(tournamentId: string): Promise<ActionResult> {
   return run(async () => {
     const { db, tournament } = await getTournamentById(await env(), tournamentId);
     if (!tournament) throw new Error("not found");
-    const r = await fillFakeTournament(db, tournament);
-    return { ok: true, key: "fake", values: r };
+    const { realTeams, ...counts } = await fillFakeTournament(db, tournament);
+    return { ok: true, key: realTeams ? "fakeOnReal" : "fake", values: counts };
   }, `/admin/tournaments/${tournamentId}`);
 }
 

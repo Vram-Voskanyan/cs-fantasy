@@ -1,10 +1,12 @@
 // Loads one tournament's teams, rosters, matches and map stats from Cito.
-// Call cost: teams = 1 + number of teams; matches = 1; stats = 1 per finished match.
+// Call cost: teams = 1 + one per team whose roster is older than 24 hours; matches = 1; stats = 1 per finished match.
+
+const ROSTER_TTL_MS = 24 * 3_600_000;
 
 import { createDb, type Db, schema } from "@cs-vv-fantasy/db";
-import { and, eq, inArray, isNull } from "drizzle-orm";
+import { and, eq, gt, inArray, isNull } from "drizzle-orm";
 import { type CitoGame, type CitoMatch, type CitoParticipants, type CitoRosterEntry, citoGet } from "./cito";
-import { ingestGames, ingestMatches, ingestParticipants, ingestRoster, ingestTeams } from "./ingest";
+import { ingestGames, ingestMatches, ingestParticipants, ingestRoster, ingestTeams, resolveIds } from "./ingest";
 import { scoreMatch } from "./score";
 
 async function providerId(db: Db, entityType: string, internalId: string) {
@@ -62,14 +64,41 @@ export async function syncTournamentTeams(env: CloudflareEnv, tournamentId: stri
   );
   await ingestParticipants(db, "cito", tournamentId, participants);
 
-  let players = 0;
+  // Rosters loaded in the last 24 hours are reused (a team can play several tournaments).
+  const { map: teamIds } = await resolveIds(
+    db,
+    "cito",
+    "team",
+    participants.map((p) => p.teamId),
+  );
+  const fresh = new Set(
+    (
+      await db
+        .select({ id: schema.teams.id })
+        .from(schema.teams)
+        .where(and(inArray(schema.teams.id, [...teamIds.values()]), gt(schema.teams.rosterSyncedAt, new Date(Date.now() - ROSTER_TTL_MS))))
+    ).map((t) => t.id),
+  );
+  let calls = 1;
+  let reused = 0;
   for (const p of participants) {
+    const teamId = teamIds.get(p.teamId)!;
+    if (fresh.has(teamId)) {
+      reused++;
+      continue;
+    }
     const roster = await citoGet<CitoRosterEntry[]>(env.CITO_API_KEY, `/cs2/teams/${p.teamId}/roster`);
+    calls++;
     await saveRaw(env, `roster/${p.teamId}`, roster);
-    players += (await ingestRoster(db, "cito", p.teamId, roster.data ?? [])).players;
+    await ingestRoster(db, "cito", p.teamId, roster.data ?? []);
+    await db.update(schema.teams).set({ rosterSyncedAt: new Date() }).where(eq(schema.teams.id, teamId));
   }
   await db.update(schema.tournaments).set({ dataSource: "cito" }).where(eq(schema.tournaments.id, tournamentId));
-  return { teams: participants.length, players, calls: 1 + participants.length };
+  const players = await db
+    .select({ id: schema.teamPlayers.playerId })
+    .from(schema.teamPlayers)
+    .where(and(inArray(schema.teamPlayers.teamId, [...teamIds.values()]), eq(schema.teamPlayers.isActive, true)));
+  return { teams: participants.length, players: players.length, calls, reused };
 }
 
 export async function syncTournamentMatches(env: CloudflareEnv, tournamentId: string) {
@@ -99,6 +128,8 @@ export async function syncTournamentStats(env: CloudflareEnv, tournamentId: stri
   let maps = 0;
   for (const m of pending) {
     const matchProviderId = await providerId(db, "match", m.id);
+    // Fake matches on real teams (test data) have no stats at Cito.
+    if (matchProviderId.startsWith("fake-")) continue;
     const body = await citoGet<CitoGame[]>(env.CITO_API_KEY, `/cs2/matches/${matchProviderId}/games`);
     await saveRaw(env, `games/${matchProviderId}`, body);
     const result = await ingestGames(db, "cito", matchProviderId, body.data ?? []);

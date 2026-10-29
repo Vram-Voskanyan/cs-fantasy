@@ -1,0 +1,1 @@
+ALTER TABLE `teams` ADD `roster_synced_at` integer;

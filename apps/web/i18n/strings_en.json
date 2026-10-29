@@ -245,10 +245,10 @@
     "noStages": "No stages yet. Saving the fantasy status adds one stage that locks at the tournament start.",
     "data": "Tournament data",
     "dataHint": "Cito free plan: 500 calls per month. Fake data costs no calls and uses the Cito shape.",
-    "loadTeams": "Load teams and rosters from Cito ({calls} calls)",
+    "loadTeams": "Load real teams and rosters from Cito (1 call + 1 per team; rosters from the last 24 hours are reused)",
     "loadMatches": "Load matches from Cito (1 call)",
     "loadStats": "Load stats for finished matches (up to {max} calls)",
-    "fillFake": "Fill with fake data",
+    "fillFake": "Fill with fake data (keeps real teams if loaded)",
     "simulateNext": "Simulate next match",
     "simulateFive": "Simulate 5 matches",
     "rescore": "Re-score all matches",
@@ -333,7 +333,7 @@
     "results": {
       "ok": "Done.",
       "error": "Failed: {error}",
-      "teams": "Loaded {teams} teams and {players} players.",
+      "teams": "Loaded {teams} teams and {players} players ({calls} Cito calls).",
       "matches": "Loaded {matches} matches and {maps} maps.",
       "stats": "Loaded stats for {matches} matches ({maps} maps).",
       "fake": "Created {teams} teams, {players} players, {matches} matches.",
@@ -343,7 +343,11 @@
       "prices": "Saved {count} prices.",
       "rescored": "Re-scored {matches} matches.",
       "stages": "Stages saved.",
-      "configSaved": "Saved version {version}."
-    }
+      "configSaved": "Saved version {version}.",
+      "cleared": "Tournament data cleared.",
+      "fakeOnReal": "Kept {teams} real teams and {players} players, created a fake schedule of {matches} matches."
+    },
+    "clearData": "Clear tournament data",
+    "clearConfirm": "Click again: deletes teams, matches, pool and fantasy teams of this tournament"
   }
 }

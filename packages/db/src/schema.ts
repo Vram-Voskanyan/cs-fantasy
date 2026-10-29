@@ -147,6 +147,8 @@ export const teams = sqliteTable("teams", {
   vrsRanking: integer("vrs_ranking"),
   logoUrl: text("logo_url"),
   syncedAt: integer("synced_at", { mode: "timestamp_ms" }),
+  // When the roster was last loaded from the provider. Rosters are reused for 24 hours to save API calls.
+  rosterSyncedAt: integer("roster_synced_at", { mode: "timestamp_ms" }),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 });

@@ -137,12 +137,28 @@ export class CitoError extends Error {
   }
 }
 
+const MAX_RETRIES = 3;
+const DEFAULT_WAIT_S = 60;
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// Cito allows about 10 calls per minute. On HTTP 429 we wait as long as the API asks (Retry-After) and retry.
 export async function citoGet<T>(apiKey: string, path: string, params: Record<string, string> = {}) {
   const url = new URL(BASE_URL + path);
   for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
-  const res = await fetch(url, { headers: { "x-api-key": apiKey, accept: "application/json" } });
-  const remaining = res.headers.get("x-ratelimit-monthly-remaining");
-  console.log(`[cito] GET ${path} -> ${res.status} (monthly calls left: ${remaining ?? "?"})`);
-  if (!res.ok) throw new CitoError(res.status, path);
-  return (await res.json()) as CitoResponse<T>;
+  for (let attempt = 0; ; attempt++) {
+    const res = await fetch(url, { headers: { "x-api-key": apiKey, accept: "application/json" } });
+    const remaining = res.headers.get("x-ratelimit-monthly-remaining");
+    console.log(`[cito] GET ${path} -> ${res.status} (monthly calls left: ${remaining ?? "?"})`);
+    if (res.status === 429 && attempt < MAX_RETRIES) {
+      const waitS = Number(res.headers.get("retry-after")) || DEFAULT_WAIT_S;
+      console.log(`[cito] rate limited, waiting ${waitS}s`);
+      await sleep(Math.min(waitS, 120) * 1000);
+      continue;
+    }
+    if (!res.ok) throw new CitoError(res.status, path);
+    // Slow down before the per-minute limit is reached.
+    if (Number(res.headers.get("x-ratelimit-remaining-minute") ?? 10) <= 1) await sleep(DEFAULT_WAIT_S * 1000);
+    return (await res.json()) as CitoResponse<T>;
+  }
 }

@@ -22,6 +22,13 @@
       "when": 1793284603512,
       "tag": "0002_esports_and_fantasy",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1793286605633,
+      "tag": "0003_team_roster_synced_at",
+      "breakpoints": true
     }
   ]
 }
