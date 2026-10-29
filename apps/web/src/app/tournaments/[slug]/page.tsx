@@ -9,12 +9,15 @@ import { PlayersTable } from "@/components/tournaments/players-table";
 import { TeamsGrid } from "@/components/tournaments/teams-grid";
 import { formatDates, formatPrize, LiveBadge, TierBadge } from "@/components/tournaments/tournament-meta";
 import { buttonClass } from "@/components/ui/button";
+import { ShowMore } from "@/components/ui/show-more";
 import { getDb } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { loadTournamentView } from "@/lib/tournament-view";
 import { getTournamentBySlug, liveStatus } from "@/lib/tournaments";
 import { LeaderboardTable } from "@/components/leaderboard-table";
 import { tournamentLeaderboard } from "@/lib/leaderboard";
+
+const TEAMS_SHOWN = 6;
 
 const PANEL_TEXT = {
   none: "fantasyPanelNone",
@@ -46,6 +49,11 @@ export default async function TournamentPage({ params }: PageProps<"/tournaments
     loadTournamentView(db, tournament, session?.user.id ?? null, now),
   ]);
   const leaderboard = tournament.fantasyStatus === "none" ? [] : await tournamentLeaderboard(db, tournament.id);
+  const tCommon = await getTranslations("common");
+  // Teams with the user's players first; without a team, the best-ranked teams. The rest behind a button.
+  const withMine = view.teams.filter((team) => team.players.some((p) => p.myRole));
+  const primaryTeams = withMine.length ? withMine : view.teams.slice(0, TEAMS_SHOWN);
+  const otherTeams = view.teams.filter((team) => !primaryTeams.includes(team));
   const status = liveStatus(tournament, now);
   const playable = ["open", "locked", "finished"].includes(tournament.fantasyStatus) && !!session;
   // "open" with every stage already locked plays like "locked".
@@ -163,7 +171,7 @@ export default async function TournamentPage({ params }: PageProps<"/tournaments
           <h2 id="leaderboard-title" className="mb-4 font-display text-2xl font-bold">
             {t("sections.leaderboard")}
           </h2>
-          <LeaderboardTable rows={leaderboard} me={session?.user.id ?? null} showTeam />
+          <LeaderboardTable rows={leaderboard} me={session?.user.id ?? null} showTeam limit={5} expandable />
         </section>
       ) : null}
 
@@ -172,7 +180,14 @@ export default async function TournamentPage({ params }: PageProps<"/tournaments
           <h2 id="teams-title" className="mb-4 font-display text-2xl font-bold">
             {t("teamsTitle")}
           </h2>
-          <TeamsGrid teams={view.teams} />
+          <TeamsGrid teams={primaryTeams} />
+          {otherTeams.length ? (
+            <div className="mt-4">
+              <ShowMore label={t("showAllTeams", { count: view.teams.length })} lessLabel={tCommon("showLess")}>
+                <TeamsGrid teams={otherTeams} />
+              </ShowMore>
+            </div>
+          ) : null}
         </section>
       ) : null}
 

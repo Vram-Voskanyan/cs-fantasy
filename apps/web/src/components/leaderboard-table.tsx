@@ -1,4 +1,5 @@
 import { getFormatter, getTranslations } from "next-intl/server";
+import { ShowMore } from "@/components/ui/show-more";
 import type { LeaderboardRow } from "@/lib/leaderboard";
 
 const SHOWN = 25;
@@ -10,20 +11,24 @@ export async function LeaderboardTable({
   showTeam,
   showTournaments,
   limit,
+  expandable,
 }: {
   rows: LeaderboardRow[];
   me: string | null;
   showTeam?: boolean;
   showTournaments?: boolean;
-  // Compact mode: only the top rows plus the user's row, no "show all".
+  // Compact mode: only the top rows plus the user's row.
   limit?: number;
+  // With `limit`: a "See all" button reveals the other rows.
+  expandable?: boolean;
 }) {
-  const [t, format] = await Promise.all([getTranslations("leaderboard"), getFormatter()]);
+  const [t, tCommon, format] = await Promise.all([getTranslations("leaderboard"), getTranslations("common"), getFormatter()]);
   if (rows.length === 0) return <p className="card text-fg-muted">{t("empty")}</p>;
   const shown = limit ?? SHOWN;
   const top = rows.slice(0, shown);
   const mine = rows.find((r) => r.userId === me);
   const rest = limit ? [] : rows.slice(shown);
+  const hidden = rows.filter((r) => !top.includes(r) && r !== mine);
 
   const row = (r: LeaderboardRow) => (
     <tr key={`${r.userId}-${r.teamName ?? ""}`} className={`border-t border-border tabular-nums ${r.userId === me ? "bg-primary-tint" : ""}`}>
@@ -60,6 +65,16 @@ export async function LeaderboardTable({
           </tbody>
         </table>
       </div>
+      {limit && expandable && hidden.length > 0 ? (
+        <ShowMore label={t("seeAll", { count: rows.length })} lessLabel={tCommon("showLess")}>
+          <div className="overflow-x-auto rounded-[6px] border border-border">
+            <table className="w-full min-w-[420px] text-sm">
+              {head}
+              <tbody>{hidden.map(row)}</tbody>
+            </table>
+          </div>
+        </ShowMore>
+      ) : null}
       {rest.length > 0 ? (
         <details>
           <summary className="cursor-pointer text-sm text-fg-muted hover:text-fg">{t("showAll", { count: rows.length })}</summary>

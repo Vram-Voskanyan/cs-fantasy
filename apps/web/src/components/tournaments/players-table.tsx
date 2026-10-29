@@ -1,16 +1,28 @@
 import { Check } from "lucide-react";
 import Link from "next/link";
 import { getFormatter, getTranslations } from "next-intl/server";
+import { ShowMore } from "@/components/ui/show-more";
 import type { ViewPlayer } from "@/lib/tournament-view";
 
-const SHOWN = 20;
+const TOP = 10;
 
+type Ranked = { player: ViewPlayer; rank: number };
+
+/** Top players by points plus the user's players; the full list behind a button. */
 export async function PlayersTable({ players }: { players: ViewPlayer[] }) {
-  const [t, tRoles, format] = await Promise.all([getTranslations("tournaments"), getTranslations("roles"), getFormatter()]);
+  const [t, tCommon, tRoles, format] = await Promise.all([
+    getTranslations("tournaments"),
+    getTranslations("common"),
+    getTranslations("roles"),
+    getFormatter(),
+  ]);
   if (players.length === 0) return <p className="card text-fg-muted">{t("noPlayers")}</p>;
   const credits = (n: number) => format.number(n / 10, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  const ranked: Ranked[] = players.map((player, i) => ({ player, rank: i + 1 }));
+  const shown = ranked.filter((r) => r.rank <= TOP || r.player.myRole);
+  const rest = ranked.filter((r) => !shown.includes(r));
 
-  const table = (rows: ViewPlayer[], offset: number) => (
+  const table = (rows: Ranked[]) => (
     <div className="overflow-x-auto rounded-[6px] border border-border">
       <table className="w-full min-w-[640px] text-sm">
         <thead className="bg-surface-1">
@@ -26,9 +38,9 @@ export async function PlayersTable({ players }: { players: ViewPlayer[] }) {
           </tr>
         </thead>
         <tbody>
-          {rows.map((p, i) => (
+          {rows.map(({ player: p, rank }) => (
             <tr key={p.id} className={`border-t border-border tabular-nums ${p.myRole ? "bg-primary-tint" : "bg-surface-1/40"}`}>
-              <td className="px-3 py-2 text-right text-fg-muted">{offset + i + 1}</td>
+              <td className="px-3 py-2 text-right text-fg-muted">{rank}</td>
               <td className="px-3 py-2">
                 <span className="flex items-center gap-1.5">
                   <Link href={`/players/${p.slug}`} className="font-medium hover:underline">
@@ -54,17 +66,14 @@ export async function PlayersTable({ players }: { players: ViewPlayer[] }) {
       </table>
     </div>
   );
-  // The user's players always show, even below the top rows.
-  const top = players.slice(0, SHOWN);
-  const rest = players.slice(SHOWN);
+
   return (
     <div className="grid gap-3">
-      {table(top, 0)}
+      {table(shown)}
       {rest.length ? (
-        <details open={rest.some((p) => p.myRole)}>
-          <summary className="cursor-pointer text-sm text-fg-muted hover:text-fg">{t("showAllPlayers", { count: players.length })}</summary>
-          <div className="mt-3">{table(rest, SHOWN)}</div>
-        </details>
+        <ShowMore label={t("showAllPlayers", { count: players.length })} lessLabel={tCommon("showLess")}>
+          {table(rest)}
+        </ShowMore>
       ) : null}
     </div>
   );

@@ -148,7 +148,8 @@
     "filterFantasyOpen": "Fantasy open",
     "finishedTitle": "Finished",
     "noResults": "No tournaments match these filters.",
-    "showAllPlayers": "Show all {count} players"
+    "showAllPlayers": "Show all {count} players",
+    "showAllTeams": "Show all {count} teams"
   },
   "roles": {
     "none": "No role",
@@ -448,6 +449,10 @@
     "empty": "No fantasy teams yet.",
     "byTournament": "By tournament",
     "showAll": "Show all {count}",
-    "tournamentTitle": "Leaderboard"
+    "tournamentTitle": "Leaderboard",
+    "seeAll": "See all {count}"
+  },
+  "common": {
+    "showLess": "Show less"
   }
 }
