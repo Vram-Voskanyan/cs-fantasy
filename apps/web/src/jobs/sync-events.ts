@@ -1,10 +1,8 @@
 import { createDb, schema } from "@cs-vv-fantasy/db";
-import { and, eq, inArray } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { type CitoEvent, citoGet } from "./cito";
-
-const PROVIDER = "cito";
-const ENTITY = "tournament";
+import { resolveIds } from "./ingest";
 
 type Status = (typeof schema.tournamentStatuses)[number];
 
@@ -21,7 +19,7 @@ const toDate = (value: string | null) => (value ? new Date(value) : null);
 // One provider call: live events plus the next upcoming ones.
 export async function syncEvents(env: CloudflareEnv) {
   const started = Date.now();
-  const { body } = await citoGet<CitoEvent>(env.CITO_API_KEY, "/cs2/events/active", {
+  const body = await citoGet<CitoEvent[]>(env.CITO_API_KEY, "/cs2/events/active", {
     includeUpcoming: "true",
     upcomingLimit: "40",
     limit: "60",
@@ -34,25 +32,15 @@ export async function syncEvents(env: CloudflareEnv) {
   });
 
   const db = createDb(env.DB);
-  const ids = events.map((e) => e.id);
-  const known = ids.length
-    ? await db
-        .select({ providerId: schema.externalIds.providerId, internalId: schema.externalIds.internalId })
-        .from(schema.externalIds)
-        .where(
-          and(
-            eq(schema.externalIds.provider, PROVIDER),
-            eq(schema.externalIds.entityType, ENTITY),
-            inArray(schema.externalIds.providerId, ids),
-          ),
-        )
-    : [];
-  const internalByProvider = new Map(known.map((k) => [k.providerId, k.internalId]));
+  const { map: ids, created } = await resolveIds(
+    db,
+    "cito",
+    "tournament",
+    events.map((e) => e.id),
+  );
 
   const syncedAt = new Date(started);
-  let created = 0;
-  const statements: BatchItem<"sqlite">[] = [];
-  for (const event of events) {
+  const statements: BatchItem<"sqlite">[] = events.map((event) => {
     const values = {
       slug: event.slug,
       name: event.name,
@@ -70,25 +58,17 @@ export async function syncEvents(env: CloudflareEnv) {
       bannerUrl: event.bannerImageUrl,
       syncedAt,
     };
-    const internalId = internalByProvider.get(event.id);
-    if (internalId) {
-      statements.push(db.update(schema.tournaments).set(values).where(eq(schema.tournaments.id, internalId)));
-      continue;
-    }
-    created += 1;
-    const id = crypto.randomUUID();
-    statements.push(
-      db.insert(schema.tournaments).values({ id, ...values }),
-      db.insert(schema.externalIds).values({ provider: PROVIDER, entityType: ENTITY, providerId: event.id, internalId: id }),
-    );
+    const id = ids.get(event.id)!;
+    return created.has(event.id)
+      ? db.insert(schema.tournaments).values({ id, ...values })
+      : db.update(schema.tournaments).set(values).where(eq(schema.tournaments.id, id));
+  });
+  for (let i = 0; i < statements.length; i += 50) {
+    const [first, ...rest] = statements.slice(i, i + 50);
+    if (first) await db.batch([first, ...rest]);
   }
 
-  if (statements.length > 0) {
-    const [first, ...rest] = statements;
-    await db.batch([first, ...rest]);
-  }
-
-  const summary = { events: events.length, created, updated: events.length - created, ms: Date.now() - started };
+  const summary = { events: events.length, created: created.size, updated: events.length - created.size, ms: Date.now() - started };
   console.log(`[ingest] events synced`, summary);
   return summary;
 }

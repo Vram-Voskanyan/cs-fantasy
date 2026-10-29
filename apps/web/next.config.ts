@@ -8,7 +8,7 @@ const nextConfig: NextConfig = {
   // Off for now: OpenNext on Workers and simple request-time auth first.
   // See docs/decisions/0001-m1-foundation.md.
   cacheComponents: false,
-  transpilePackages: ["@cs-vv-fantasy/db"],
+  transpilePackages: ["@cs-vv-fantasy/db", "@cs-vv-fantasy/scoring"],
   turbopack: {
     rules: {
       "*.css": {

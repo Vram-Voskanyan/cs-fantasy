@@ -48,6 +48,14 @@ Load tournaments locally (1 Cito call; the free plan has 500 per month): `curl -
 
 Without an email provider, password reset links are printed in the dev server log. Email verification is off for the MVP.
 
+## Admin and test data
+
+- Make a user an admin (they must sign up first): `npm run admin:grant -- <email> --local` (or `--staging`, `--production`). The admin panel is at `/admin`.
+- Admin panel per tournament: fantasy status, stages and lock times, load data from Cito, fill fake data, simulate matches, player pool and prices. Game config editor: `/admin/config`.
+- Fill a tournament with fake data without an admin account (staging or production):
+  `curl -X POST -H "Authorization: Bearer <SYNC_TOKEN>" -H "Content-Type: application/json" -d '{"slug":"iem-beijing-2026","simulate":0}' <url>/api/internal/fake`
+  Fake data has the exact Cito shape. Production data is reset before launch.
+
 ## Checks
 
 ```bash

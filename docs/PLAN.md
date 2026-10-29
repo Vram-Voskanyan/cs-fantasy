@@ -115,10 +115,6 @@ Base points:
 | Assist | +1 |
 | Opening kill (first kill of the round) | +2 |
 | Opening death | -1 |
-| 3-kill round (needs per-map multi-kill data) | +2 |
-| 4-kill round (needs per-map multi-kill data) | +4 |
-| 5-kill round, ace (needs per-map multi-kill data) | +8 |
-| Clutch won, 1vX (needs per-map clutch data) | +2 per opponent (1v1 = +2, 1v3 = +6) |
 | ADR 100 or more | +3 |
 | ADR 85 to 99 | +1 |
 | Rating 1.50 or more | +6 |
@@ -133,7 +129,7 @@ Example: a solid map (20 kills, 16 deaths, 5 assists, 3 opening kills, 2 opening
 
 Rules and notes:
 
-- The MVP provider (Cito, section 4.2) has no per-map multi-kill or clutch data. Those lines are off in the MVP rules config. They switch on when a provider gives the data. The examples above include them; without them, the solid map scores about 39.
+- Only stats Cito returns per map are scored (decision 2026-10-29): kills, deaths, assists, headshots, opening kills and deaths, ADR, KAST, rating, rounds, map and series result, team VRS ranking. Multi-kills and clutches are not in Cito's per-map data, so they are not part of the rules. With these rules the solid map above scores 39 (tested in `tests/scoring.test.ts`).
 - "Rating" is the per-map rating from the data provider. If the provider has no rating, we compute our own performance rating from KPR, DPR, ADR, KAST and impact stats (formula decided in the data spike, M0). We do not claim it is the HLTV rating.
 - A player who does not play a map scores 0 for that map.
 - Forfeited or technical-loss maps give no points to anyone.
@@ -162,11 +158,8 @@ Each player in the roster gets one role. The role adds a bonus on every map that
 | Survivor | +0.25 per round survived (rounds played − deaths) | Deaths, rounds | Yes |
 | Enabler | +1 per assist (+1 per flash assist when available) | Assists, flash assists | Yes (assists only) |
 | Underdog | +4 if the player's team wins the map against a higher-ranked team | Team ranking (Valve VRS) | Yes |
-| Sniper | +1 per AWP kill | Kills by weapon | No: needs per-map AWP kills |
-| Closer | +3 per clutch won (on top of base clutch points) | Clutches | No: needs per-map clutches |
-| Rampage | Multi-kill round bonuses are doubled | Multi-kill rounds | No: needs per-map multi-kills |
 
-A role whose stat is missing is not offered. The MVP has 7 roles, so a roster of 5 still has a real choice.
+All 7 roles use Cito per-map stats only. Each role can be switched off in the game config. Implementation: `packages/scoring`.
 
 ### 3.6 Player pricing
 
@@ -374,6 +367,8 @@ apps/web/i18n/strings_ru.json    Example of a later language: copy strings_en.js
 ---
 
 ## 6. Data model (draft)
+
+The implemented schema is `packages/db/src/schema.ts` (it supersedes the draft below). Esports tables use Cito field names only.
 
 ```
 users                (Better Auth tables: user, session, account, verification)

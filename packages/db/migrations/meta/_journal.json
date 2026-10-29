@@ -15,6 +15,13 @@
       "when": 1793282755465,
       "tag": "0001_tournaments",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1793284603512,
+      "tag": "0002_esports_and_fantasy",
+      "breakpoints": true
     }
   ]
 }
