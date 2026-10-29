@@ -1,0 +1,42 @@
+// cs-vv-fantasy web app (Next.js via OpenNext). Resource IDs: docs/CLOUDFLARE.md
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "cs-vv-fantasy",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "observability": { "enabled": true },
+  "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "cs-vv-fantasy" }],
+  "vars": { "APP_URL": "https://cs-vv-fantasy.vram-arm.workers.dev", "APP_ENV": "production" },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "cs-vv-fantasy-db",
+      "database_id": "cf6db5c6-71a6-4297-b854-7c2f35b99a60",
+      "migrations_dir": "../../packages/db/migrations"
+    }
+  ],
+  "kv_namespaces": [{ "binding": "CACHE", "id": "ef72e9485ffd4407ab0f6883473dd73b" }],
+  "r2_buckets": [{ "binding": "STORAGE", "bucket_name": "cs-vv-fantasy-assets" }],
+  "env": {
+    "staging": {
+      "name": "cs-vv-fantasy-staging",
+      "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "cs-vv-fantasy-staging" }],
+      "vars": { "APP_URL": "https://cs-vv-fantasy-staging.vram-arm.workers.dev", "APP_ENV": "staging" },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "cs-vv-fantasy-db-staging",
+          "database_id": "99f9a5de-2fb0-476a-bd0c-1d2eb5d80241",
+          "migrations_dir": "../../packages/db/migrations"
+        }
+      ],
+      "kv_namespaces": [{ "binding": "CACHE", "id": "b99a6153f41d4b268f1073d32a97efd8" }],
+      "r2_buckets": [{ "binding": "STORAGE", "bucket_name": "cs-vv-fantasy-assets-staging" }]
+    }
+  }
+}

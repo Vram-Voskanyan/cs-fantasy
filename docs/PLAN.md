@@ -303,7 +303,7 @@ flowchart LR
 
 Known OpenNext limitation: Next.js Node.js middleware (introduced in 15.2) is not supported on Workers. Use standard middleware or checks in route handlers and layouts.
 
-### 5.3 Repository layout (monorepo, pnpm workspaces)
+### 5.3 Repository layout (monorepo, npm workspaces)
 
 ```
 apps/

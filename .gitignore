@@ -11,3 +11,9 @@ __pycache__/
 
 # Wrangler local state
 .wrangler/
+
+# Dependencies and build output
+node_modules/
+.next/
+.open-next/
+*.tsbuildinfo

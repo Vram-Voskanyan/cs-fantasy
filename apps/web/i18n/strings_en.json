@@ -1,0 +1,60 @@
+{
+  "app": {
+    "name": "cs-vv-fantasy",
+    "tagline": "Fantasy for pro CS2 tournaments. Pick 5 players, give each a role, score from real stats on every map.",
+    "notAffiliated": "Not affiliated with Valve."
+  },
+  "nav": {
+    "home": "Home",
+    "signIn": "Sign in",
+    "signUp": "Create account",
+    "account": "Account"
+  },
+  "home": {
+    "kicker": "Free to play",
+    "title": "Build your CS2 fantasy team",
+    "ctaSignUp": "Create account",
+    "ctaSignIn": "Sign in",
+    "ctaAccount": "Go to your account",
+    "welcomeBack": "Welcome back, {name}.",
+    "comingSoon": "Tournaments open soon. Create an account now to be ready."
+  },
+  "auth": {
+    "signUpTitle": "Create your account",
+    "signInTitle": "Sign in",
+    "nameLabel": "Display name",
+    "nameHint": "Shown on leaderboards. 3 to 24 characters.",
+    "emailLabel": "Email",
+    "passwordLabel": "Password",
+    "passwordHint": "At least {min} characters.",
+    "submitSignUp": "Create account",
+    "submitSignIn": "Sign in",
+    "haveAccount": "Already have an account?",
+    "noAccount": "No account yet?",
+    "signOut": "Sign out"
+  },
+  "account": {
+    "title": "Your account",
+    "name": "Display name",
+    "email": "Email",
+    "emailVerified": "Email verified",
+    "emailNotVerified": "Email not verified yet. Check your inbox.",
+    "memberSince": "Member since"
+  },
+  "errors": {
+    "nameLength": "Use 3 to 24 characters.",
+    "emailInvalid": "Enter a valid email address.",
+    "passwordTooShort": "Use at least {min} characters.",
+    "passwordTooLong": "Use at most {max} characters.",
+    "userExists": "An account with this email already exists.",
+    "invalidCredentials": "Email or password is wrong.",
+    "tooManyRequests": "Too many attempts. Wait a minute and try again.",
+    "generic": "Something went wrong. Try again."
+  },
+  "email": {
+    "verifySubject": "Confirm your email for cs-vv-fantasy",
+    "verifyBody": "Open this link to confirm your email: {url}",
+    "resetSubject": "Reset your cs-vv-fantasy password",
+    "resetBody": "Open this link to set a new password: {url}. The link expires in 1 hour. If you did not ask for this, ignore this email."
+  }
+}

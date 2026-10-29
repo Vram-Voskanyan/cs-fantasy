@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - name: Build the Worker bundle
+        run: npx opennextjs-cloudflare build
+        working-directory: apps/web
+
+  deploy-staging:
+    needs: check
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: staging
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - name: Check Cloudflare token
+        if: env.CLOUDFLARE_API_TOKEN == ''
+        run: echo "::warning::CLOUDFLARE_API_TOKEN secret is not set, staging deploy skipped. See docs/CLOUDFLARE.md."
+      - uses: actions/checkout@v5
+        if: env.CLOUDFLARE_API_TOKEN != ''
+      - uses: actions/setup-node@v5
+        if: env.CLOUDFLARE_API_TOKEN != ''
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+        if: env.CLOUDFLARE_API_TOKEN != ''
+      - name: Migrate staging database and deploy staging
+        if: env.CLOUDFLARE_API_TOKEN != ''
+        run: npm run deploy:staging

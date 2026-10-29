@@ -1,0 +1,17 @@
+{
+  "name": "@cs-vv-fantasy/worker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --test-scheduled --port 8788",
+    "typecheck": "tsc --noEmit",
+    "cf-typegen": "wrangler types",
+    "deploy": "wrangler deploy",
+    "deploy:staging": "wrangler deploy --env staging"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "wrangler": "^4.155.0"
+  }
+}
