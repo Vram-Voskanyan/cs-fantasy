@@ -14,6 +14,6 @@ if (!flags) {
 }
 execFileSync(
   "npx",
-  ["wrangler", "d1", "execute", "DB", ...flags, "--command", `UPDATE user SET role = 'admin' WHERE email = '${email.toLowerCase()}'; SELECT email, role FROM user WHERE email = '${email.toLowerCase()}';`],
+  ["wrangler", "d1", "execute", "DB", ...flags, "--command", `UPDATE user SET role = 'admin' WHERE lower(email) = '${email.toLowerCase()}'; SELECT email, role FROM user WHERE lower(email) = '${email.toLowerCase()}';`],
   { cwd: new URL("../apps/web", import.meta.url), stdio: "inherit" },
 );
