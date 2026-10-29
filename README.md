@@ -33,7 +33,7 @@ APP_ENV=development
 APP_URL=http://localhost:3000
 BETTER_AUTH_SECRET=$(openssl rand -base64 32)
 EOF
-printf 'APP_ENV=development\nCITO_API_KEY=<your key>\n' > apps/worker/.dev.vars
+printf 'APP_ENV=development\nCITO_API_KEY=<your key>\nSYNC_TOKEN=%s\n' "$(openssl rand -hex 24)" > apps/worker/.dev.vars
 
 npm run db:migrate:local   # creates the local D1 database
 ```
@@ -44,7 +44,7 @@ npm run db:migrate:local   # creates the local D1 database
 |---|---|
 | `npm run dev` | Next.js dev server with hot reload and local Cloudflare bindings (D1, KV, R2). Port 3000, or the next free port. |
 | `npm run preview` | Builds the real Worker bundle and runs it in the local Workers runtime on http://localhost:8787. Use this to check behavior before a deploy. |
-| `npm run dev:worker` | Background worker on http://localhost:8788. Trigger the cron with `curl "http://localhost:8788/__scheduled?cron=0+*/6+*+*+*"`. |
+| `npm run dev:worker` | Background worker on http://localhost:8788, sharing the web app's local database. Load tournaments with `curl -X POST -H "Authorization: Bearer <SYNC_TOKEN from apps/worker/.dev.vars>" http://localhost:8788/sync/events` (uses 1 Cito call; the free plan has 500 per month). |
 
 Without an email provider, verification and password reset links are printed in the dev server log.
 

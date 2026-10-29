@@ -8,7 +8,9 @@
     "home": "Home",
     "signIn": "Sign in",
     "signUp": "Create account",
-    "account": "Account"
+    "account": "Account",
+    "tournaments": "Tournaments",
+    "menu": "Main menu"
   },
   "home": {
     "kicker": "Free to play",
@@ -17,7 +19,11 @@
     "ctaSignIn": "Sign in",
     "ctaAccount": "Go to your account",
     "welcomeBack": "Welcome back, {name}.",
-    "comingSoon": "Tournaments open soon. Create an account now to be ready."
+    "comingSoon": "Tournaments open soon. Create an account now to be ready.",
+    "liveTitle": "Live now",
+    "upcomingTitle": "Upcoming championships",
+    "allTournaments": "All tournaments",
+    "empty": "No tournaments yet. The schedule syncs every 6 hours."
   },
   "auth": {
     "signUpTitle": "Create your account",
@@ -56,5 +62,34 @@
     "verifyBody": "Open this link to confirm your email: {url}",
     "resetSubject": "Reset your cs-vv-fantasy password",
     "resetBody": "Open this link to set a new password: {url}. The link expires in 1 hour. If you did not ask for this, ignore this email."
+  },
+  "tournaments": {
+    "title": "Tournaments",
+    "intro": "Live and upcoming CS2 tournaments. Fantasy games open for the biggest events.",
+    "liveTitle": "Live now",
+    "upcomingTitle": "Upcoming",
+    "empty": "No tournaments yet. The schedule syncs every 6 hours.",
+    "tier": "Tier {tier}",
+    "live": "Live",
+    "startsIn": "Starts {when}",
+    "lan": "LAN",
+    "online": "Online",
+    "teams": "{count, plural, one {# team} other {# teams}}",
+    "prizePool": "Prize pool",
+    "prizeTbd": "TBD",
+    "dates": "Dates",
+    "location": "Location",
+    "format": "Format",
+    "teamCount": "Teams",
+    "back": "All tournaments",
+    "fantasyNone": "Fantasy not announced",
+    "fantasyAnnounced": "Fantasy coming soon",
+    "fantasyOpen": "Fantasy open",
+    "fantasyLocked": "Fantasy locked",
+    "fantasyFinished": "Fantasy finished",
+    "fantasyPanelTitle": "Fantasy",
+    "fantasyPanelNone": "No fantasy game for this tournament yet. We open fantasy games for the biggest events. Create an account to be ready.",
+    "fantasyPanelSoon": "The fantasy game opens before the first match. Team building starts here.",
+    "dataSource": "Tournament data: Cito API."
   }
 }

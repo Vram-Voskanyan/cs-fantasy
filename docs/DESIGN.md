@@ -284,7 +284,7 @@ Exit animations are about 30% faster than enter animations.
 
 ## 11. Implementation notes
 
-- Styling: Tailwind CSS v4. Tokens from this document go in `apps/web/app/globals.css` under `@theme`, so classes like `bg-surface-1` and `text-fg-muted` exist.
+- Styling: Tailwind CSS v4. Tokens from this document go in `apps/web/src/app/globals.css` under `@theme`, so classes like `bg-surface-1` and `text-fg-muted` exist. The side colors are named `side-ct` and `side-t` in Tailwind (`text-side-t`), because a color named `t` would clash with the `border-t` utility.
 - Components: accessible primitives from shadcn/ui (Radix: dialog, dropdown, tabs, tooltip), restyled with our tokens. Shared components live in `apps/web/components/ui/` (`Button`, `Card`, `PlayerCard`, `StatTile`, `RoleChip`, `LiveBadge`, `BudgetBar`).
 - All text comes from `apps/web/i18n/strings_en.json` (see `CLAUDE.md`).
 - The preview `docs/design-preview.html` is the reference for the CSS of buttons, cards and motion. Copy its token block into `globals.css` when the app is set up.

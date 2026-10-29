@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev --test-scheduled --port 8788",
+    "dev": "wrangler dev --test-scheduled --port 8788 --persist-to ../web/.wrangler/state",
     "typecheck": "tsc --noEmit",
     "cf-typegen": "wrangler types",
     "deploy": "wrangler deploy",
@@ -13,5 +13,9 @@
   "devDependencies": {
     "typescript": "^5.9.3",
     "wrangler": "^4.155.0"
+  },
+  "dependencies": {
+    "@cs-vv-fantasy/db": "^0.0.0",
+    "drizzle-orm": "^0.45.4"
   }
 }

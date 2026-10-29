@@ -45,6 +45,7 @@ Names only. Values live in Cloudflare (`wrangler secret put <NAME>`) and, for lo
 | `BETTER_AUTH_SECRET` | web | Set on production and staging (random, different per environment). Local copy in `apps/web/.dev.vars`. |
 | `RESEND_API_KEY`, `EMAIL_FROM` | web | Needs a Resend account. Until then, emails are not sent. |
 | `TURNSTILE_SECRET_KEY` | web | Needs a Turnstile widget |
+| `SYNC_TOKEN` | ingest worker | Protects `POST /sync/events` (manual tournament sync). Random value, not stored anywhere. To run a manual sync: `wrangler secret put SYNC_TOKEN` with a new value, then `curl -X POST -H "Authorization: Bearer <value>" <worker url>/sync/events`. |
 
 ## Still to do
 

@@ -58,8 +58,8 @@
   --color-primary-tint: var(--primary-tint);
   --color-accent: var(--accent);
   --color-accent-tint: var(--accent-tint);
-  --color-ct: var(--ct);
-  --color-t: var(--t);
+  --color-side-ct: var(--ct);
+  --color-side-t: var(--t);
   --color-positive: var(--positive);
   --color-positive-tint: var(--positive-tint);
   --color-negative: var(--negative);
@@ -263,5 +263,84 @@
     animation-duration: 1ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 1ms !important;
+  }
+}
+
+@layer components {
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 24px;
+    padding: 0 8px;
+    border-radius: 4px;
+    background: var(--surface-3);
+    color: var(--fg);
+    font: 600 12px/1 var(--font-display);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .badge-tier-s {
+    background: var(--primary-tint);
+    color: var(--primary);
+  }
+  .badge-fantasy {
+    background: var(--accent-tint);
+    color: var(--accent);
+  }
+  .live {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font: 700 12px/1 var(--font-display);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--live);
+  }
+  .live-dot {
+    position: relative;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--live);
+  }
+  .live-dot::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: var(--live);
+    animation: live-pulse 1.6s var(--ease-out) infinite;
+  }
+  .card-link {
+    display: block;
+    transition:
+      transform var(--dur-fast) var(--ease-out),
+      filter var(--dur-fast) var(--ease-out);
+  }
+  @media (hover: hover) {
+    .card-link:hover {
+      --card-edge: var(--border-strong);
+      transform: translateY(-2px);
+      filter: drop-shadow(0 8px 24px rgb(0 0 0 / 0.6));
+    }
+  }
+}
+
+@keyframes live-pulse {
+  from {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  to {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-dot::after {
+    display: none;
   }
 }
