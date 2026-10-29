@@ -476,3 +476,37 @@
     display: none;
   }
 }
+
+/* Home hero art: slow radar sweep and blip pulses. */
+.hero-sweep {
+  transform-origin: 220px 220px;
+  animation: hero-spin 6s linear infinite;
+}
+.hero-blip-ring {
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0;
+  animation: hero-blip 3s var(--ease-out) infinite;
+}
+@keyframes hero-spin {
+  to {
+    transform: rotate(-360deg);
+  }
+}
+@keyframes hero-blip {
+  0% {
+    transform: scale(0.4);
+    opacity: 0.6;
+  }
+  70%,
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-sweep,
+  .hero-blip-ring {
+    animation: none;
+  }
+}

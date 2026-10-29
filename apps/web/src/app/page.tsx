@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
+import { HeroArt } from "@/components/hero-art";
 import { HeroTracers } from "@/components/hero-tracers";
 import { PageShell } from "@/components/page-shell";
 import { TournamentGrid } from "@/components/tournaments/tournament-grid";
@@ -24,7 +25,8 @@ export default async function HomePage() {
     <PageShell>
       <section className="relative -mx-4 -mt-10 overflow-hidden px-4 pt-10 pb-6 md:-mx-6 md:-mt-16 md:px-6 md:pt-16">
         <HeroTracers />
-        <div className="relative max-w-2xl">
+        <div className="relative grid items-center gap-10 md:grid-cols-[1fr_minmax(0,360px)] lg:grid-cols-[1fr_440px]">
+        <div className="max-w-2xl">
         <p className="label text-primary!">{t("kicker")}</p>
         <h1 className="mt-3 font-display text-4xl leading-[1.05] font-extrabold md:text-5xl">{t("title")}</h1>
         <p className="mt-4 text-fg-muted">{tApp("tagline")}</p>
@@ -43,6 +45,10 @@ export default async function HomePage() {
               </Link>
             </>
           )}
+        </div>
+        </div>
+        <div className="hidden md:block">
+          <HeroArt />
         </div>
         </div>
       </section>
