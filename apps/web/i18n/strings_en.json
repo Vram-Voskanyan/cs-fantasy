@@ -26,7 +26,9 @@
     "liveTitle": "Live now",
     "upcomingTitle": "Upcoming championships",
     "allTournaments": "All tournaments",
-    "empty": "No tournaments yet. The schedule syncs every 6 hours."
+    "empty": "No tournaments yet. The schedule syncs every 6 hours.",
+    "leaderboardTitle": "Top fantasy players",
+    "fullLeaderboard": "Full leaderboard"
   },
   "auth": {
     "signUpTitle": "Create your account",

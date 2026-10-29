@@ -2,9 +2,12 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { HeroArt } from "@/components/hero-art";
 import { HeroTracers } from "@/components/hero-tracers";
+import { LeaderboardTable } from "@/components/leaderboard-table";
 import { PageShell } from "@/components/page-shell";
 import { TournamentGrid } from "@/components/tournaments/tournament-grid";
 import { buttonClass } from "@/components/ui/button";
+import { getDb } from "@/lib/db";
+import { overallLeaderboard } from "@/lib/leaderboard";
 import { getSession } from "@/lib/session";
 import { isFeatured, listCurrentTournaments } from "@/lib/tournaments";
 
@@ -12,11 +15,12 @@ const UPCOMING_ON_HOME = 6;
 
 export default async function HomePage() {
   const now = new Date();
-  const [t, tApp, session, current] = await Promise.all([
+  const [t, tApp, session, current, leaderboard] = await Promise.all([
     getTranslations("home"),
     getTranslations("app"),
     getSession(),
     listCurrentTournaments(now),
+    getDb().then(overallLeaderboard),
   ]);
   const live = current.live.filter(isFeatured);
   const upcoming = current.upcoming.filter(isFeatured).slice(0, UPCOMING_ON_HOME);
@@ -77,6 +81,22 @@ export default async function HomePage() {
           <p className="card text-fg-muted">{t("empty")}</p>
         )}
       </section>
+
+      {leaderboard.length > 0 ? (
+        <section className="mt-16" aria-labelledby="home-leaderboard">
+          <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+            <h2 id="home-leaderboard" className="font-display text-2xl font-bold md:text-3xl">
+              {t("leaderboardTitle")}
+            </h2>
+            <Link href="/leaderboard" className={buttonClass("ghost", "sm")}>
+              {t("fullLeaderboard")}
+            </Link>
+          </div>
+          <div className="max-w-3xl">
+            <LeaderboardTable rows={leaderboard} me={session?.user.id ?? null} showTournaments limit={5} />
+          </div>
+        </section>
+      ) : null}
     </PageShell>
   );
 }

@@ -4,12 +4,26 @@ import type { LeaderboardRow } from "@/lib/leaderboard";
 const SHOWN = 25;
 
 /** Ranked fantasy players. The current user's row is highlighted and always shown. */
-export async function LeaderboardTable({ rows, me, showTeam, showTournaments }: { rows: LeaderboardRow[]; me: string | null; showTeam?: boolean; showTournaments?: boolean }) {
+export async function LeaderboardTable({
+  rows,
+  me,
+  showTeam,
+  showTournaments,
+  limit,
+}: {
+  rows: LeaderboardRow[];
+  me: string | null;
+  showTeam?: boolean;
+  showTournaments?: boolean;
+  // Compact mode: only the top rows plus the user's row, no "show all".
+  limit?: number;
+}) {
   const [t, format] = await Promise.all([getTranslations("leaderboard"), getFormatter()]);
   if (rows.length === 0) return <p className="card text-fg-muted">{t("empty")}</p>;
-  const top = rows.slice(0, SHOWN);
+  const shown = limit ?? SHOWN;
+  const top = rows.slice(0, shown);
   const mine = rows.find((r) => r.userId === me);
-  const rest = rows.slice(SHOWN);
+  const rest = limit ? [] : rows.slice(shown);
 
   const row = (r: LeaderboardRow) => (
     <tr key={`${r.userId}-${r.teamName ?? ""}`} className={`border-t border-border tabular-nums ${r.userId === me ? "bg-primary-tint" : ""}`}>
@@ -42,7 +56,7 @@ export async function LeaderboardTable({ rows, me, showTeam, showTournaments }: 
           {head}
           <tbody>
             {top.map(row)}
-            {mine && mine.rank > SHOWN ? row(mine) : null}
+            {mine && !top.includes(mine) ? row(mine) : null}
           </tbody>
         </table>
       </div>
