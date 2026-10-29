@@ -28,7 +28,7 @@ export function SignUpForm() {
     const next: Errors = {};
     if (name.length < NAME_MIN || name.length > NAME_MAX) next.name = t("errors.nameLength");
     if (!/^\S+@\S+\.\S+$/.test(email)) next.email = t("errors.emailInvalid");
-    if (password.length < PASSWORD_MIN) next.password = t("errors.passwordTooShort", { min: PASSWORD_MIN });
+    if (password.length < PASSWORD_MIN) next.password = t("errors.passwordRequired");
     if (password.length > PASSWORD_MAX) next.password = t("errors.passwordTooLong", { max: PASSWORD_MAX });
     setErrors(next);
     if (Object.keys(next).length > 0) return;
@@ -54,7 +54,6 @@ export function SignUpForm() {
         name="password"
         type="password"
         label={t("auth.passwordLabel")}
-        hint={t("auth.passwordHint", { min: PASSWORD_MIN })}
         error={errors.password}
         autoComplete="new-password"
         required

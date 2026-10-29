@@ -34,7 +34,6 @@
     "nameHint": "Shown on leaderboards. 3 to 24 characters.",
     "emailLabel": "Email",
     "passwordLabel": "Password",
-    "passwordHint": "At least {min} characters.",
     "submitSignUp": "Create account",
     "submitSignIn": "Sign in",
     "haveAccount": "Already have an account?",
@@ -53,12 +52,12 @@
   "errors": {
     "nameLength": "Use 3 to 24 characters.",
     "emailInvalid": "Enter a valid email address.",
-    "passwordTooShort": "Use at least {min} characters.",
     "passwordTooLong": "Use at most {max} characters.",
     "userExists": "An account with this email already exists.",
     "invalidCredentials": "Email or password is wrong.",
     "tooManyRequests": "Too many attempts. Wait a minute and try again.",
-    "generic": "Something went wrong. Try again."
+    "generic": "Something went wrong. Try again.",
+    "passwordRequired": "Enter a password."
   },
   "email": {
     "resetSubject": "Reset your cs-vv-fantasy password",

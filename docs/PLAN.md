@@ -486,7 +486,7 @@ Visual design (colors, fonts, buttons, cards, motion): `docs/DESIGN.md`, with a 
 ## 9. Security, abuse and compliance (MVP)
 
 - Turnstile and rate limits on sign-up, login, password reset and roster save.
-- Passwords: hashed by Better Auth (scrypt), minimum length 10, password reset links expire in 1 hour, all sessions revoked on password change. Email verification is off for the MVP.
+- Passwords: hashed by Better Auth (scrypt), any non-empty password accepted (no minimum length, decision 2026-10-29), password reset links expire in 1 hour, all sessions revoked on password change. Email verification is off for the MVP.
 - One fantasy team per account per tournament. Multi-accounting is low risk while the game is free. It becomes critical in Phase 2.
 - Admin routes need an admin role and are logged in `audit_log`.
 - GDPR basics: data export and account deletion, minimal cookies, privacy policy.
