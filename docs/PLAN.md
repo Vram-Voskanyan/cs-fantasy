@@ -368,7 +368,7 @@ apps/web/i18n/strings_ru.json    Example of a later language: copy strings_en.js
 
 ### 5.8 Hosting and domain
 
-- MVP: deploy to the Cloudflare `workers.dev` subdomain, for example `cs-vv-fantasy.<account>.workers.dev` (staging: `cs-vv-fantasy-staging.<account>.workers.dev`).
+- MVP: deploy to the Cloudflare `workers.dev` subdomain: `cs-vv-fantasy.vram-arm.workers.dev` (staging: `cs-vv-fantasy-staging.vram-arm.workers.dev`). Account, resource IDs and secrets list: `docs/CLOUDFLARE.md`.
 - The public URL is an environment variable (`APP_URL`), used by Better Auth, emails and links. Moving to a custom domain later means: add the domain to Cloudflare, attach it to the Worker as a Custom Domain, change `APP_URL`. No code changes.
 
 ---
