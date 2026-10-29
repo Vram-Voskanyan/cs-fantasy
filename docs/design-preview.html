@@ -1,0 +1,737 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cs-vv-fantasy Design Preview</title>
+<!-- Preview only. The app loads fonts with next/font (docs/DESIGN.md section 3.1). -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..700&family=Tektur:wdth,wght@75..100,400..900&display=swap" rel="stylesheet">
+<style>
+/* ===== Tokens (copy into apps/web/app/globals.css @theme) ===== */
+:root {
+  color-scheme: dark;
+  --bg: #0A0C10;
+  --surface-1: #11141A;
+  --surface-2: #181C24;
+  --surface-3: #20252F;
+  --border: #262C38;
+  --border-strong: #3A4252;
+  --border-input: #646E83;
+  --fg: #E8EBF0;
+  --fg-muted: #9AA3B2;
+  --fg-subtle: #7A8394;
+  --primary: #FF6B1A;
+  --primary-hover: #FF8540;
+  --on-primary: #0A0C10;
+  --primary-tint: #2A160B;
+  --accent: #9D7BFF;
+  --accent-tint: #1E1838;
+  --ct: #6AA6FF;
+  --t: #E9B949;
+  --positive: #2FD27A;
+  --positive-tint: #0F2A1C;
+  --negative: #FF5470;
+  --negative-tint: #2A1218;
+  --live: #FF4040;
+  --warning: #FFC23D;
+
+  --font-display: "Tektur", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --cut-sm: 8px;
+  --cut-md: 12px;
+
+  --dur-instant: 80ms;
+  --dur-fast: 150ms;
+  --dur-base: 220ms;
+  --dur-slow: 320ms;
+  --dur-emphasis: 600ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-pop: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ===== Base ===== */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 400 16px/1.5 var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 1280px; margin: 0 auto; padding: 32px 16px 96px; }
+@media (min-width: 768px) { .wrap { padding: 48px 24px 120px; } }
+section { margin-top: 56px; }
+.num { font-variant-numeric: tabular-nums; }
+.label {
+  font: 600 12px/1.3 var(--font-body);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--fg-muted);
+}
+.h-display { font: 800 36px/1.05 var(--font-display); font-stretch: 85%; margin: 0; letter-spacing: 0.01em; }
+.h1 { font: 700 28px/1.1 var(--font-display); margin: 0; }
+.h2 { font: 700 24px/1.15 var(--font-display); margin: 0 0 4px; }
+.h3 { font: 600 20px/1.25 var(--font-display); margin: 0; }
+@media (min-width: 768px) {
+  .h-display { font-size: 48px; }
+  .h1 { font-size: 36px; }
+  .h2 { font-size: 28px; }
+}
+.muted { color: var(--fg-muted); }
+.lead { color: var(--fg-muted); max-width: 64ch; margin: 8px 0 24px; }
+.row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.grid { display: grid; gap: 16px; }
+@media (min-width: 640px) { .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 900px) { .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 900px) { .grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (min-width: 640px) and (max-width: 899px) { .grid-3, .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.icon { width: 20px; height: 20px; flex: none; stroke: currentColor; fill: none; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+.icon-sm { width: 16px; height: 16px; }
+:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+/* Header with faint grid (marketing surfaces only) */
+.hero {
+  position: relative;
+  padding: 32px 0 8px;
+  background-image:
+    linear-gradient(rgb(255 255 255 / 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 255 255 / 0.03) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+.kicker { color: var(--primary); }
+
+/* ===== Swatches ===== */
+.swatches { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.swatch { background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; }
+.swatch i { display: block; height: 56px; }
+.swatch div { padding: 8px 10px; font-size: 13px; }
+.swatch code { color: var(--fg-muted); font-size: 12px; }
+
+/* ===== Type specimen ===== */
+.type-row { display: grid; gap: 4px 24px; padding: 16px 0; border-bottom: 1px solid var(--border); }
+@media (min-width: 768px) { .type-row { grid-template-columns: 180px 1fr; align-items: baseline; } }
+
+/* ===== Buttons: cut corners drawn on pseudo layers so the focus outline is never clipped ===== */
+.btn {
+  --cut: var(--cut-sm);
+  --btn-bg: var(--surface-2);
+  --btn-edge: var(--border-strong);
+  --btn-fg: var(--fg);
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 16px;
+  border: 0;
+  background: none;
+  color: var(--btn-fg);
+  font: 600 14px/1 var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--dur-instant) var(--ease-out), filter var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+.btn::before, .btn::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  transition: background-color var(--dur-fast) var(--ease-out);
+}
+.btn::before {
+  inset: 0;
+  background: var(--btn-edge);
+  clip-path: polygon(var(--cut) 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%, 0 var(--cut));
+}
+.btn::after {
+  inset: 1px;
+  background: var(--btn-bg);
+  clip-path: polygon(calc(var(--cut) - 0.6px) 0, 100% 0, 100% calc(100% - var(--cut) + 0.6px), calc(100% - var(--cut) + 0.6px) 100%, 0 100%, 0 calc(var(--cut) - 0.6px));
+}
+.btn .icon { transition: transform var(--dur-fast) var(--ease-out); }
+.btn:active:not(:disabled) { transform: translateY(1px) scale(0.98); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.btn-primary { --btn-bg: var(--primary); --btn-edge: var(--primary); --btn-fg: var(--on-primary); }
+.btn-secondary { /* defaults */ }
+.btn-ghost { --btn-bg: transparent; --btn-edge: transparent; --btn-fg: var(--fg-muted); }
+.btn-danger { --btn-bg: var(--surface-1); --btn-edge: var(--negative); --btn-fg: var(--negative); }
+.btn-icon { width: 44px; padding: 0; }
+.btn-sm { height: 36px; padding: 0 12px; }
+.btn-sm .hit { position: absolute; inset: -4px 0; } /* transparent: keeps a 44px tap area */
+.btn-lg { height: 52px; padding: 0 24px; font-size: 15px; }
+
+@media (hover: hover) {
+  .btn-primary:hover:not(:disabled) { --btn-bg: var(--primary-hover); --btn-edge: var(--primary-hover); filter: drop-shadow(0 6px 16px rgb(255 107 26 / 0.45)); }
+  .btn-secondary:hover:not(:disabled) { --btn-bg: var(--surface-3); --btn-edge: var(--fg-subtle); }
+  .btn-ghost:hover:not(:disabled) { --btn-bg: var(--surface-2); --btn-fg: var(--fg); }
+  .btn-danger:hover:not(:disabled) { --btn-bg: var(--negative-tint); }
+  .btn:hover:not(:disabled) .icon-trail { transform: translateX(2px); }
+}
+/* Loading: spinner replaces the leading icon, width stays */
+.btn[aria-busy="true"] { cursor: progress; }
+.spin { animation: spin 700ms linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ===== Cards ===== */
+.card {
+  --cut: var(--cut-md);
+  --card-bg: var(--surface-1);
+  --card-edge: var(--border);
+  position: relative;
+  isolation: isolate;
+  padding: 16px;
+  transition: transform var(--dur-fast) var(--ease-out), filter var(--dur-fast) var(--ease-out), opacity var(--dur-fast);
+}
+@media (min-width: 768px) { .card { padding: 20px; } }
+.card::before, .card::after { content: ""; position: absolute; z-index: -1; transition: background var(--dur-fast) var(--ease-out); }
+.card::before { inset: 0; background: var(--card-edge); clip-path: polygon(0 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% 100%, 0 100%); }
+.card::after { inset: 1px; background: var(--card-bg); clip-path: polygon(0 0, calc(100% - var(--cut) + 0.6px) 0, 100% calc(var(--cut) - 0.6px), 100% 100%, 0 100%); }
+@media (hover: hover) {
+  .card-interactive:hover { --card-edge: var(--border-strong); transform: translateY(-2px); filter: drop-shadow(0 8px 24px rgb(0 0 0 / 0.6)); }
+}
+
+/* Player card */
+.player { display: grid; grid-template-columns: 48px 1fr auto; gap: 12px; align-items: center; }
+.avatar {
+  width: 48px; height: 48px; display: grid; place-items: center;
+  background: var(--surface-3); color: var(--fg-muted);
+  font: 700 16px/1 var(--font-display);
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+}
+.player .meta { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; font-size: 14px; color: var(--fg-muted); margin-top: 2px; }
+.tag { font: 600 12px/1 var(--font-display); letter-spacing: 0.06em; padding: 4px 6px; background: var(--surface-3); color: var(--fg); border-radius: var(--radius-sm); }
+.price { font: 700 18px/1 var(--font-display); font-variant-numeric: tabular-nums; }
+.player .side { text-align: right; display: grid; gap: 8px; justify-items: end; }
+.player-foot { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding-top: 12px; border-top: 1px solid var(--border); font-size: 14px; }
+.reason { color: var(--negative); font-size: 14px; display: none; }
+.card.is-selected { --card-edge: rgb(255 107 26 / 0.55); }
+.card.is-selected::after { background: linear-gradient(to right, var(--primary) 0 3px, var(--primary-tint) 3px); }
+.card.is-unavailable .player > *:not(.player-foot), .card.is-unavailable .player-foot > :first-child { opacity: 0.5; }
+.card.is-unavailable .reason { display: block; }
+.check { color: var(--primary); display: none; }
+.card.is-selected .check { display: inline-flex; }
+
+/* Role chip */
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 28px; padding: 0 10px;
+  background: var(--accent-tint); color: var(--accent);
+  border-radius: var(--radius-sm);
+  font: 600 13px/1 var(--font-body);
+}
+.chip .icon { width: 16px; height: 16px; }
+
+/* Team slots + budget */
+.slots { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.slot {
+  min-height: 84px; display: grid; place-items: center; text-align: center;
+  padding: 8px; font-size: 13px; color: var(--fg-subtle);
+  border: 1px dashed var(--border-strong); border-radius: var(--radius-md);
+}
+.slot.filled { border: 1px solid var(--border-strong); background: var(--surface-2); color: var(--fg); animation: pop var(--dur-base) var(--ease-pop); }
+.slot b { display: block; font: 600 15px/1.2 var(--font-display); }
+.slot small { color: var(--fg-muted); font-variant-numeric: tabular-nums; }
+@keyframes pop { from { transform: scale(0.96); opacity: 0.4; } to { transform: scale(1); opacity: 1; } }
+.budget { margin-top: 16px; }
+.budget-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+.budget-value { font: 700 20px/1 var(--font-display); font-variant-numeric: tabular-nums; }
+.track { height: 8px; background: var(--surface-3); border-radius: 2px; overflow: hidden; }
+.fill-bar { height: 100%; width: 100%; background: var(--primary); transform-origin: left; transform: scaleX(0); transition: transform var(--dur-slow) var(--ease-out), background-color var(--dur-fast); }
+.budget.is-over .fill-bar { background: var(--negative); }
+.budget.is-over .budget-value { color: var(--negative); }
+
+/* Match card */
+.match .teams { display: grid; gap: 10px; margin: 14px 0 12px; }
+.team-line { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.team-line .name { display: flex; align-items: center; gap: 10px; font-weight: 500; }
+.team-line .score { font: 700 22px/1 var(--font-display); font-variant-numeric: tabular-nums; }
+.team-line.loser { color: var(--fg-muted); }
+.maps { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--fg-muted); font-variant-numeric: tabular-nums; }
+.status { display: flex; justify-content: space-between; align-items: center; }
+
+/* Live badge */
+.live {
+  display: inline-flex; align-items: center; gap: 8px;
+  font: 700 12px/1 var(--font-display); letter-spacing: 0.1em; color: var(--live);
+}
+.live .dot { position: relative; width: 8px; height: 8px; border-radius: 50%; background: var(--live); }
+.live .dot::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: var(--live); animation: pulse 1.6s var(--ease-out) infinite; }
+@keyframes pulse { from { transform: scale(1); opacity: 0.6; } to { transform: scale(2.6); opacity: 0; } }
+
+/* Stat tile */
+.stat-value { font: 700 28px/1 var(--font-display); font-variant-numeric: tabular-nums; margin: 10px 0 8px; }
+@media (min-width: 768px) { .stat-value { font-size: 32px; } }
+.delta { display: inline-flex; align-items: center; gap: 4px; font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.delta.up { color: var(--positive); }
+.delta.down { color: var(--negative); }
+.side-split { display: flex; gap: 16px; font-size: 14px; font-variant-numeric: tabular-nums; }
+.side-ct { color: var(--ct); }
+.side-t { color: var(--t); }
+
+/* Leaderboard */
+.board { list-style: none; margin: 0; padding: 0; border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; }
+.board-head, .board li {
+  display: grid; grid-template-columns: 48px 56px 1fr 88px; gap: 8px; align-items: center;
+  padding: 0 16px; min-height: 56px;
+}
+.board-head { min-height: 40px; background: var(--surface-1); border-bottom: 1px solid var(--border); }
+.board-head span:last-child, .board .pts { text-align: right; }
+.board li { position: relative; background: var(--surface-1); border-bottom: 1px solid var(--border); transition: background-color 1.2s var(--ease-out); }
+.board li:last-child { border-bottom: 0; }
+.board .rank { font: 700 18px/1 var(--font-display); font-variant-numeric: tabular-nums; }
+.board .who b { display: block; font-weight: 600; }
+.board .who small { color: var(--fg-muted); font-size: 13px; }
+.board .pts { font: 700 18px/1 var(--font-display); font-variant-numeric: tabular-nums; }
+.board .move { font-size: 13px; }
+.board .move.none { color: var(--fg-subtle); }
+.board li.me { background: var(--surface-2); }
+.board li.me::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--primary); }
+.board li.flash-up { background: var(--positive-tint); transition-duration: 0s; }
+.board li.flash-down { background: var(--negative-tint); transition-duration: 0s; }
+@media (max-width: 520px) {
+  .board-head, .board li { grid-template-columns: 36px 44px 1fr 72px; padding: 0 12px; }
+}
+
+/* Skeleton */
+.skeleton { display: grid; gap: 10px; }
+.sk { height: 14px; border-radius: 3px; background: linear-gradient(90deg, var(--surface-2) 0%, var(--surface-3) 50%, var(--surface-2) 100%); background-size: 200% 100%; animation: shimmer 1.2s linear infinite; }
+@keyframes shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+
+/* Countdown */
+.countdown { font: 700 22px/1 var(--font-display); font-variant-numeric: tabular-nums; color: var(--warning); }
+
+/* Inputs */
+.field { display: grid; gap: 6px; max-width: 360px; }
+.field label { font-weight: 500; font-size: 14px; }
+.input {
+  height: 44px; padding: 0 12px; font: 400 16px/1 var(--font-body); color: var(--fg);
+  background: var(--surface-3); border: 1px solid var(--border-input); border-radius: var(--radius-sm);
+  transition: border-color var(--dur-fast);
+}
+.input:focus-visible { border-color: var(--primary); outline: 2px solid var(--primary); outline-offset: 1px; }
+.field .error { color: var(--negative); font-size: 14px; display: flex; gap: 6px; align-items: center; }
+.input[aria-invalid="true"] { border-color: var(--negative); }
+
+.note { font-size: 14px; color: var(--fg-muted); margin-top: 12px; }
+
+/* Reduced motion: final states, no loops */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; }
+  .live .dot::after { display: none; }
+  .sk { animation: none; }
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+  <symbol id="i-loader" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></symbol>
+  <symbol id="i-crosshair" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M22 12h-4M6 12H2M12 6V2M12 22v-4"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></symbol>
+  <symbol id="i-zap" viewBox="0 0 24 24"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></symbol>
+</svg>
+
+<main class="wrap">
+  <header class="hero">
+    <div class="label kicker">Design system · draft v0.1</div>
+    <h1 class="h-display" style="margin-top:8px">cs-vv-fantasy</h1>
+    <p class="lead">Tactical HUD: dark, angular, data-first. Cut corners are the one signature shape. Glow only for focus, live and the primary action. Spec: <code>docs/DESIGN.md</code>.</p>
+    <div class="row">
+      <button class="btn btn-primary btn-lg" type="button">Build your team <svg class="icon icon-trail"><use href="#i-arrow"/></svg></button>
+      <button class="btn btn-secondary btn-lg" type="button">How scoring works</button>
+    </div>
+  </header>
+
+  <!-- Colors -->
+  <section aria-labelledby="s-color">
+    <h2 class="h2" id="s-color">Color</h2>
+    <p class="lead">Orange is action and selection. Violet is roles only. Blue and gold are CT and T side data only.</p>
+    <div class="swatches">
+      <div class="swatch"><i style="background:var(--bg);border-bottom:1px solid var(--border)"></i><div>bg<br><code>#0A0C10</code></div></div>
+      <div class="swatch"><i style="background:var(--surface-1)"></i><div>surface-1<br><code>#11141A</code></div></div>
+      <div class="swatch"><i style="background:var(--surface-2)"></i><div>surface-2<br><code>#181C24</code></div></div>
+      <div class="swatch"><i style="background:var(--surface-3)"></i><div>surface-3<br><code>#20252F</code></div></div>
+      <div class="swatch"><i style="background:var(--fg)"></i><div>fg<br><code>#E8EBF0</code></div></div>
+      <div class="swatch"><i style="background:var(--fg-muted)"></i><div>fg-muted<br><code>#9AA3B2</code></div></div>
+      <div class="swatch"><i style="background:var(--primary)"></i><div>primary<br><code>#FF6B1A</code></div></div>
+      <div class="swatch"><i style="background:var(--accent)"></i><div>accent (roles)<br><code>#9D7BFF</code></div></div>
+      <div class="swatch"><i style="background:var(--ct)"></i><div>ct<br><code>#6AA6FF</code></div></div>
+      <div class="swatch"><i style="background:var(--t)"></i><div>t<br><code>#E9B949</code></div></div>
+      <div class="swatch"><i style="background:var(--positive)"></i><div>positive<br><code>#2FD27A</code></div></div>
+      <div class="swatch"><i style="background:var(--negative)"></i><div>negative<br><code>#FF5470</code></div></div>
+      <div class="swatch"><i style="background:var(--live)"></i><div>live<br><code>#FF4040</code></div></div>
+      <div class="swatch"><i style="background:var(--warning)"></i><div>warning<br><code>#FFC23D</code></div></div>
+    </div>
+  </section>
+
+  <!-- Typography -->
+  <section aria-labelledby="s-type">
+    <h2 class="h2" id="s-type">Typography</h2>
+    <p class="lead">Tektur for display, numbers and buttons. Inter for UI and body. Both have Cyrillic for future languages.</p>
+    <div class="type-row"><span class="label">Display · Tektur 800</span><span class="h-display">Grand Final</span></div>
+    <div class="type-row"><span class="label">H1 · Tektur 700</span><span class="h1">Playoffs fantasy</span></div>
+    <div class="type-row"><span class="label">H3 · Tektur 600</span><span class="h3">kairo</span></div>
+    <div class="type-row"><span class="label">Stat · tabular</span><span class="stat-value" style="margin:0">1,284.5</span></div>
+    <div class="type-row"><span class="label">Body · Inter 16</span><span>Pick 5 players under 100.0 credits. Give each one a role. Points come from real stats on every map.</span></div>
+    <div class="type-row"><span class="label">Body small · Inter 14</span><span class="muted" style="font-size:14px">Locks when the first match of the stage starts.</span></div>
+    <div class="type-row"><span class="label">Label · Inter 600</span><span class="label">Avg points per map</span></div>
+  </section>
+
+  <!-- Buttons -->
+  <section aria-labelledby="s-btn">
+    <h2 class="h2" id="s-btn">Buttons</h2>
+    <p class="lead">Hover lightens and (primary only) glows. Press moves 1 px down. Focus has a 2 px orange outline. Try Tab.</p>
+    <div class="grid" style="gap:20px">
+      <div class="row">
+        <button class="btn btn-primary" type="button">Save team</button>
+        <button class="btn btn-secondary" type="button">Filter</button>
+        <button class="btn btn-ghost" type="button">Cancel</button>
+        <button class="btn btn-danger" type="button"><svg class="icon"><use href="#i-x"/></svg>Remove</button>
+        <button class="btn btn-secondary btn-icon" type="button" aria-label="Lock info"><svg class="icon"><use href="#i-lock"/></svg></button>
+      </div>
+      <div class="row">
+        <button class="btn btn-primary btn-sm" type="button"><span class="hit"></span><svg class="icon icon-sm"><use href="#i-plus"/></svg>Add</button>
+        <button class="btn btn-primary" type="button"><svg class="icon"><use href="#i-plus"/></svg>Add player</button>
+        <button class="btn btn-primary btn-lg" type="button">Join league <svg class="icon icon-trail"><use href="#i-arrow"/></svg></button>
+      </div>
+      <div class="row">
+        <button class="btn btn-primary" type="button" id="save-demo"><svg class="icon" id="save-icon"><use href="#i-check"/></svg><span id="save-label">Save team</span></button>
+        <button class="btn btn-primary" type="button" disabled>Save team</button>
+        <span class="note" style="margin:0">Left: click to see loading, then saved. Right: disabled.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Team builder -->
+  <section aria-labelledby="s-builder">
+    <h2 class="h2" id="s-builder">Team builder: player cards, slots, budget</h2>
+    <p class="lead">Add players to see the slot pop and the budget bar. Unavailable cards say why (budget, team limit, team full), not only with color.</p>
+
+    <div class="card" style="margin-bottom:16px">
+      <div class="slots" id="slots"></div>
+      <div class="budget" id="budget">
+        <div class="budget-top">
+          <span class="label">Budget left</span>
+          <span><span class="budget-value" id="budget-left">100.0</span> <span class="muted num">/ 100.0</span></span>
+        </div>
+        <div class="track" role="progressbar" aria-label="Budget used" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="budget-track"><div class="fill-bar" id="budget-fill"></div></div>
+      </div>
+    </div>
+
+    <div class="grid grid-3" id="pool"></div>
+  </section>
+
+  <!-- Roles -->
+  <section aria-labelledby="s-roles">
+    <h2 class="h2" id="s-roles">Role chips</h2>
+    <p class="lead">Violet belongs to roles only, so a role is easy to spot anywhere.</p>
+    <div class="row">
+      <span class="chip"><svg class="icon"><use href="#i-zap"/></svg>Spearhead</span>
+      <span class="chip"><svg class="icon"><use href="#i-crosshair"/></svg>Sharpshooter</span>
+      <span class="chip"><svg class="icon"><use href="#i-shield"/></svg>Anchor</span>
+    </div>
+  </section>
+
+  <!-- Matches -->
+  <section aria-labelledby="s-match">
+    <h2 class="h2" id="s-match">Match cards</h2>
+    <div class="grid grid-3">
+      <article class="card card-interactive match">
+        <div class="status"><span class="label">Playoffs · BO3</span><span class="muted num" style="font-size:14px">Today 18:30</span></div>
+        <div class="teams">
+          <div class="team-line"><span class="name"><span class="tag">NOV</span>Nova Esports</span></div>
+          <div class="team-line"><span class="name"><span class="tag">IRW</span>Iron Wolves</span></div>
+        </div>
+        <div class="maps">Starts in <span class="countdown" style="font-size:14px">00:42:17</span></div>
+      </article>
+
+      <article class="card card-interactive match">
+        <div class="status"><span class="label">Playoffs · BO3</span><span class="live"><span class="dot"></span>LIVE</span></div>
+        <div class="teams">
+          <div class="team-line"><span class="name"><span class="tag">VTX</span>Vortex</span><span class="score">1</span></div>
+          <div class="team-line"><span class="name"><span class="tag">HLX</span>Helix Five</span><span class="score">0</span></div>
+        </div>
+        <div class="maps"><span>Ancient 13–9</span><span style="color:var(--fg)">Nuke 7–5 <span class="side-ct">CT</span></span></div>
+      </article>
+
+      <article class="card card-interactive match">
+        <div class="status"><span class="label">Group stage · BO1</span><span class="muted" style="font-size:14px">Final</span></div>
+        <div class="teams">
+          <div class="team-line"><span class="name"><span class="tag">SKY</span>Skyline</span><span class="score">16</span></div>
+          <div class="team-line loser"><span class="name"><span class="tag">ORB</span>Orbital</span><span class="score">14</span></div>
+        </div>
+        <div class="maps"><span>Mirage · overtime</span></div>
+      </article>
+    </div>
+  </section>
+
+  <!-- Stats -->
+  <section aria-labelledby="s-stat">
+    <h2 class="h2" id="s-stat">Stat tiles</h2>
+    <div class="grid grid-4">
+      <div class="card"><div class="label">Total points</div><div class="stat-value">412.5</div><span class="delta up"><svg class="icon icon-sm"><use href="#i-up"/></svg>+38.0 today</span></div>
+      <div class="card"><div class="label">Global rank</div><div class="stat-value">#1,204</div><span class="delta up"><svg class="icon icon-sm"><use href="#i-up"/></svg>+312</span></div>
+      <div class="card"><div class="label">Last map</div><div class="stat-value">−4.0</div><span class="delta down"><svg class="icon icon-sm"><use href="#i-down"/></svg>−11.5 vs avg</span></div>
+      <div class="card"><div class="label">Rating by side</div><div class="stat-value">1.18</div><div class="side-split"><span class="side-ct">CT 1.31</span><span class="side-t">T 1.04</span></div></div>
+    </div>
+  </section>
+
+  <!-- Leaderboard -->
+  <section aria-labelledby="s-board">
+    <h2 class="h2" id="s-board">Leaderboard (live)</h2>
+    <p class="lead">Click "Simulate update": points count up, changed rows flash, rows move to their new rank (FLIP).</p>
+    <div class="row" style="margin-bottom:16px">
+      <button class="btn btn-secondary" type="button" id="sim">Simulate update</button>
+    </div>
+    <div class="board-head label" aria-hidden="true" style="display:grid;border:1px solid var(--border);border-bottom:0;border-radius:var(--radius-md) var(--radius-md) 0 0"><span>#</span><span>Move</span><span>Manager</span><span>Points</span></div>
+    <ol class="board" id="board" style="border-radius:0 0 var(--radius-md) var(--radius-md)"></ol>
+    <p class="sr-only" aria-live="polite" id="board-live" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)"></p>
+  </section>
+
+  <!-- Forms and loading -->
+  <section aria-labelledby="s-form">
+    <h2 class="h2" id="s-form">Form field and loading skeleton</h2>
+    <div class="grid grid-2">
+      <div class="card">
+        <div class="field">
+          <label for="team-name">Team name</label>
+          <input class="input" id="team-name" value="ab" aria-invalid="true" aria-describedby="team-name-err">
+          <span class="error" id="team-name-err"><svg class="icon icon-sm"><use href="#i-alert"/></svg>Use 3 to 24 characters.</span>
+        </div>
+      </div>
+      <div class="card" aria-busy="true" aria-label="Loading player list">
+        <div class="skeleton">
+          <div class="sk" style="width:40%"></div>
+          <div class="sk" style="width:85%"></div>
+          <div class="sk" style="width:65%"></div>
+          <div class="sk" style="width:75%"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+(() => {
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const fmt = new Intl.NumberFormat("en", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+  function countUp(el, from, to, ms = 600) {
+    if (reduce || from === to) { el.textContent = fmt.format(to); return; }
+    const t0 = performance.now();
+    const step = (t) => {
+      const p = Math.min(1, (t - t0) / ms);
+      const e = 1 - Math.pow(1 - p, 3);
+      el.textContent = fmt.format(from + (to - from) * e);
+      if (p < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+
+  // ----- Save button: loading then saved -----
+  const save = document.getElementById("save-demo");
+  const saveIcon = document.getElementById("save-icon");
+  const saveLabel = document.getElementById("save-label");
+  save.addEventListener("click", () => {
+    if (save.getAttribute("aria-busy") === "true") return;
+    save.style.minWidth = save.offsetWidth + "px";
+    save.setAttribute("aria-busy", "true");
+    saveIcon.innerHTML = '<use href="#i-loader"/>';
+    saveIcon.classList.add("spin");
+    setTimeout(() => {
+      save.removeAttribute("aria-busy");
+      saveIcon.classList.remove("spin");
+      saveIcon.innerHTML = '<use href="#i-check"/>';
+      saveLabel.textContent = "Saved";
+      setTimeout(() => { saveLabel.textContent = "Save team"; }, 1500);
+    }, 1100);
+  });
+
+  // ----- Team builder demo (fictional players) -----
+  const BUDGET = 100, SIZE = 5, MAX_PER_TEAM = 2;
+  const players = [
+    { id: 1, nick: "kairo", team: "NOV", country: "FI", price: 25.5, avg: 48.2, role: "Spearhead" },
+    { id: 2, nick: "drift", team: "NOV", country: "SE", price: 21.0, avg: 39.7, role: "Anchor" },
+    { id: 3, nick: "Mako", team: "NOV", country: "DK", price: 17.5, avg: 31.4, role: null },
+    { id: 4, nick: "vexx", team: "VTX", country: "PL", price: 23.0, avg: 44.1, role: "Sharpshooter" },
+    { id: 5, nick: "tidal", team: "IRW", country: "BR", price: 14.5, avg: 27.9, role: null },
+    { id: 6, nick: "Corvo", team: "HLX", country: "ES", price: 19.0, avg: 35.0, role: null },
+  ];
+  const picked = [];
+  const pool = document.getElementById("pool");
+  const slots = document.getElementById("slots");
+  const budget = document.getElementById("budget");
+  const left = document.getElementById("budget-left");
+  const fill = document.getElementById("budget-fill");
+  const track = document.getElementById("budget-track");
+  let shownLeft = BUDGET;
+
+  const icon = (id, cls = "icon") => `<svg class="${cls}"><use href="#i-${id}"/></svg>`;
+
+  function reasonFor(p) {
+    if (picked.includes(p.id)) return null;
+    if (picked.length >= SIZE) return "Team full";
+    const sameTeam = picked.filter((id) => players.find((x) => x.id === id).team === p.team).length;
+    if (sameTeam >= MAX_PER_TEAM) return `Team limit: ${MAX_PER_TEAM} from ${p.team}`;
+    const spent = picked.reduce((s, id) => s + players.find((x) => x.id === id).price, 0);
+    const over = spent + p.price - BUDGET;
+    if (over > 0) return `Over budget by ${fmt.format(over)}`;
+    return null;
+  }
+
+  function renderPool() {
+    pool.innerHTML = "";
+    for (const p of players) {
+      const selected = picked.includes(p.id);
+      const reason = reasonFor(p);
+      const card = document.createElement("article");
+      card.className = "card" + (reason ? "" : " card-interactive") + (selected ? " is-selected" : "") + (reason ? " is-unavailable" : "");
+      card.innerHTML = `
+        <div class="player">
+          <div class="avatar" aria-hidden="true">${p.nick.slice(0, 2).toUpperCase()}</div>
+          <div>
+            <h3 class="h3">${p.nick} <span class="check">${icon("check", "icon icon-sm")}</span></h3>
+            <div class="meta"><span class="tag">${p.team}</span><span>${p.country}</span>${p.role ? `<span class="chip" style="height:24px;font-size:12px">${p.role}</span>` : ""}</div>
+          </div>
+          <div class="side"><span class="price">${fmt.format(p.price)}</span><span class="label" style="font-size:11px">credits</span></div>
+          <div class="player-foot">
+            <span class="muted">Avg <b class="num" style="color:var(--fg)">${fmt.format(p.avg)}</b> pts / map</span>
+            <span class="reason">${reason ?? ""}</span>
+            ${selected
+              ? `<button class="btn btn-danger btn-sm" type="button" data-id="${p.id}"><span class="hit"></span>${icon("x", "icon icon-sm")}Remove</button>`
+              : reason ? "" : `<button class="btn btn-primary btn-sm" type="button" data-id="${p.id}"><span class="hit"></span>${icon("plus", "icon icon-sm")}Add</button>`}
+          </div>
+        </div>`;
+      pool.appendChild(card);
+    }
+  }
+
+  function renderSlots(newId) {
+    slots.innerHTML = "";
+    for (let i = 0; i < SIZE; i++) {
+      const id = picked[i];
+      const div = document.createElement("div");
+      if (id) {
+        const p = players.find((x) => x.id === id);
+        div.className = "slot filled";
+        if (id !== newId) div.style.animation = "none";
+        div.innerHTML = `<span><b>${p.nick}</b><small>${fmt.format(p.price)}</small></span>`;
+      } else {
+        div.className = "slot";
+        div.innerHTML = `<span>${icon("plus", "icon icon-sm")}<br>Empty</span>`;
+      }
+      slots.appendChild(div);
+    }
+  }
+
+  function renderBudget() {
+    const spent = picked.reduce((s, id) => s + players.find((x) => x.id === id).price, 0);
+    const remaining = BUDGET - spent;
+    countUp(left, shownLeft, remaining, 320);
+    shownLeft = remaining;
+    fill.style.transform = `scaleX(${Math.min(1, spent / BUDGET)})`;
+    track.setAttribute("aria-valuenow", String(Math.round(spent)));
+    budget.classList.toggle("is-over", remaining < 0);
+  }
+
+  pool.addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-id]");
+    if (!btn) return;
+    const id = Number(btn.dataset.id);
+    const i = picked.indexOf(id);
+    let added = null;
+    if (i >= 0) picked.splice(i, 1);
+    else if (!reasonFor(players.find((x) => x.id === id))) { picked.push(id); added = id; }
+    renderPool(); renderSlots(added); renderBudget();
+    const again = pool.querySelector(`button[data-id="${id}"]`);
+    if (again) again.focus();
+  });
+
+  renderPool(); renderSlots(); renderBudget();
+
+  // ----- Leaderboard demo: count-up, flash, FLIP reorder -----
+  const board = document.getElementById("board");
+  const live = document.getElementById("board-live");
+  const rows = [
+    { name: "nightowl", team: "Smoke Criminals", pts: 512.5 },
+    { name: "ana_lyst", team: "Eco Round Heroes", pts: 498.0 },
+    { name: "you", team: "cs-vv test squad", pts: 471.5, me: true },
+    { name: "peekaboo", team: "Wide Peekers", pts: 466.0 },
+    { name: "rush_b", team: "No Stop", pts: 440.5 },
+    { name: "utility_king", team: "Flash Bang", pts: 421.0 },
+  ].map((r, i) => ({ ...r, rank: i + 1, move: 0 }));
+
+  function rowHtml(r) {
+    const move = r.move > 0
+      ? `<span class="move delta up">${icon("up", "icon icon-sm")}${r.move}</span>`
+      : r.move < 0 ? `<span class="move delta down">${icon("down", "icon icon-sm")}${-r.move}</span>`
+      : `<span class="move none">–</span>`;
+    return `<span class="rank">${r.rank}</span>${move}<span class="who"><b>${r.name}</b><small>${r.team}</small></span><span class="pts">${fmt.format(r.pts)}</span>`;
+  }
+
+  function renderBoard() {
+    board.innerHTML = "";
+    for (const r of rows) {
+      const li = document.createElement("li");
+      li.dataset.name = r.name;
+      if (r.me) li.classList.add("me");
+      li.innerHTML = rowHtml(r);
+      board.appendChild(li);
+    }
+  }
+  renderBoard();
+
+  document.getElementById("sim").addEventListener("click", () => {
+    const first = new Map([...board.children].map((li) => [li.dataset.name, li.getBoundingClientRect().top]));
+    const before = new Map(rows.map((r) => [r.name, { pts: r.pts, rank: r.rank }]));
+    for (const r of rows) r.pts = Math.max(0, r.pts + Math.round((Math.random() * 60 - 18) * 2) / 2);
+    rows.sort((a, b) => b.pts - a.pts);
+    rows.forEach((r, i) => { r.move = before.get(r.name).rank - (i + 1); r.rank = i + 1; });
+
+    // Reorder DOM, then FLIP
+    for (const r of rows) {
+      const li = board.querySelector(`li[data-name="${r.name}"]`);
+      board.appendChild(li);
+      const old = before.get(r.name);
+      li.innerHTML = rowHtml({ ...r, pts: old.pts });
+      countUp(li.querySelector(".pts"), old.pts, r.pts, 600);
+      const diff = r.pts - old.pts;
+      li.classList.remove("flash-up", "flash-down");
+      if (diff !== 0) {
+        li.classList.add(diff > 0 ? "flash-up" : "flash-down");
+        requestAnimationFrame(() => requestAnimationFrame(() => li.classList.remove("flash-up", "flash-down")));
+      }
+      if (!reduce) {
+        const dy = first.get(r.name) - li.getBoundingClientRect().top;
+        if (dy) {
+          li.animate([{ transform: `translateY(${dy}px)` }, { transform: "translateY(0)" }],
+            { duration: 320, easing: "cubic-bezier(0.65, 0, 0.35, 1)" });
+        }
+      }
+    }
+    const me = rows.find((r) => r.me);
+    live.textContent = `Leaderboard updated. You are rank ${me.rank} with ${fmt.format(me.pts)} points.`;
+  });
+})();
+</script>
+</body>
+</html>

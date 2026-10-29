@@ -484,6 +484,8 @@ How it works:
 
 Mobile-first. Most users will check scores on a phone during matches.
 
+Visual design (colors, fonts, buttons, cards, motion): `docs/DESIGN.md`, with a live preview in `docs/design-preview.html`.
+
 ---
 
 ## 9. Security, abuse and compliance (MVP)
